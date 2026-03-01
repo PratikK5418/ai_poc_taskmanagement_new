@@ -3,8 +3,8 @@
 // ╚════════════════════════════════════════════════════════════════╝
 const SUPABASE_URL = 'https://hsnzhluqydtlxsrymvdr.supabase.co';       // e.g. https://xxxx.supabase.co
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbnpobHVxeWR0bHhzcnltdmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1Njg0MTksImV4cCI6MjA4NzE0NDQxOX0.RTMCoRSd2FzhmljSOtsltLJubeXn7zFmoBSx4F6GKlI';  // Legacy anon key (starts with eyJ...)
-const N8N_ASSIGN_URL = 'https://promptoran8n.promptora.in/webhook-test/ai-assign';                        // e.g. http://localhost:5678/webhook/ai-assign
-const N8N_CHAT_URL   = 'https://promptoran8n.promptora.in/webhook-test/ai-chatbot';                        // e.g. http://localhost:5678/webhook/chat
+const N8N_ASSIGN_URL = 'https://promptoran8n.promptora.in/webhook/ai-assign';                        // e.g. http://localhost:5678/webhook/ai-assign
+const N8N_CHAT_URL   = 'https://promptoran8n.promptora.in/webhook/ai-chatbot';                        // e.g. http://localhost:5678/webhook/chat
 const N8N_BATCH_URL  = '';                        // e.g. http://localhost:5678/webhook/batch-assign
 const N8N_EMBED_URL  = '';                        // e.g. http://localhost:5678/webhook/embed-task
 
