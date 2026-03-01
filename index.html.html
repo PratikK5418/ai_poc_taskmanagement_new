@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LSEG · Data Operations Hub (Integrated)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="lseg-styles.css"/>
+</head>
+<body>
+<!-- ── Password Gate ──────────────────────────────────────────── -->
+<div class="auth-gate" id="auth-gate">
+  <div class="auth-card">
+    <div class="auth-logo"><div class="logo-icon" style="width:48px;height:48px;font-size:20px;">LS</div></div>
+    <div class="auth-title">LSEG Data Operations Hub</div>
+    <div class="auth-sub">Enter password to continue</div>
+    <form onsubmit="return _authCheck()" style="width:100%;display:flex;flex-direction:column;gap:10px;">
+      <input type="password" class="auth-input" id="auth-pw" placeholder="Password" autocomplete="current-password" autofocus/>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;">Sign In</button>
+    </form>
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-hint">Contact your admin for access credentials</div>
+  </div>
+</div>
+<script>
+// ── Password Config ──────────────────────────────────────────
+// Change this password to whatever you want:
+var _APP_PASSWORD = 'lseg2024';
+
+function _authCheck() {
+  var pw = document.getElementById('auth-pw').value;
+  if (pw === _APP_PASSWORD) {
+    sessionStorage.setItem('lseg_auth', '1');
+    document.getElementById('auth-gate').style.display = 'none';
+    document.getElementById('app-root').style.display = '';
+    return false;
+  }
+  document.getElementById('auth-error').textContent = 'Incorrect password. Please try again.';
+  document.getElementById('auth-pw').value = '';
+  document.getElementById('auth-pw').focus();
+  return false;
+}
+// Auto-skip if already authenticated this session
+if (sessionStorage.getItem('lseg_auth') === '1') {
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('auth-gate').style.display = 'none';
+    document.getElementById('app-root').style.display = '';
+  });
+}
+</script>
+<!-- ── App Root (hidden until authenticated) ──────────────────── -->
+<div id="app-root" style="display:none;">
+<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><div class="loading-text">Connecting to Supabase...</div></div>
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="document.querySelector('.sidebar').classList.remove('open');this.classList.remove('open');"></div>
+<div class="shell">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-top"><div class="logo-icon">LS</div><div class="logo-text">LSEG</div></div><div class="logo-sub">Data Operations Hub</div></div>
+    <nav class="nav">
+      <div class="nav-section-label">Operations</div>
+      <div class="nav-item active" id="nav-tasks" onclick="showPage('tasks')"><span class="nav-icon">&#9783;</span> Task Queue<span class="nav-count alert" id="badge-open">0</span></div>
+      <div class="nav-item" id="nav-sla" onclick="showPage('sla')"><span class="nav-icon">&#9203;</span> SLA Monitor<span class="nav-count warn" id="badge-sla">0</span></div>
+      <div class="nav-item" id="nav-team" onclick="showPage('team')"><span class="nav-icon">&#9673;</span> Team</div>
+      <div class="nav-section-label">Queues</div>
+      <div id="queue-nav-items"></div>
+      <div class="nav-section-label">Tools</div>
+      <div class="nav-item" onclick="openIngestModal()"><span class="nav-icon">&#8659;</span> Ingest Failures</div>
+      <div class="nav-item" onclick="openConfigModal()"><span class="nav-icon">&#9881;</span> AI Settings</div>
+    </nav>
+    <div class="sidebar-footer"><div class="user-avatar">JS</div><div><div class="user-name">John Snow</div><div class="user-role">Senior Analyst</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebar-backdrop').classList.toggle('open');">&#9776;</button>
+      <div><div class="page-title" id="page-title">Task Queue</div><div class="breadcrumb" id="page-bc">All Queues &middot; All Status</div></div>
+      <div class="topbar-actions">
+        <button class="btn btn-default btn-sm" onclick="openIngestModal()">&#8659; Ingest Failed Outcomes</button>
+        <button class="btn btn-default btn-sm" onclick="openCreateTaskModal()">+ New Task</button>
+        <button class="btn btn-ai btn-sm" onclick="bulkAutoAssign()">&#9889; AI Auto-Assign All</button>
+      </div>
+    </div>
+    <div class="content" id="main-content"></div>
+  </div>
+</div>
+<div class="overlay" id="task-overlay"><div class="modal" style="max-width:860px;" id="task-modal-body"></div></div>
+<div class="overlay" id="create-overlay"><div class="modal" style="max-width:560px;">
+  <div class="modal-header"><div><div class="modal-title">Create New Task</div><div class="modal-subtitle">Manually define a task for the queue</div></div><div class="modal-close" onclick="closeModal('create-overlay')">&#10005;</div></div>
+  <div class="modal-body">
+    <div class="form-grid">
+      <div class="form-field"><label class="form-label">Queue *</label><select class="form-input queue-dropdown" id="ct-queue"></select></div>
+      <div class="form-field"><label class="form-label">Priority *</label><select class="form-input" id="ct-priority"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+      <div class="form-field"><label class="form-label">Domain *</label><select class="form-input domain-dropdown" id="ct-domain"></select></div>
+      <div class="form-field"><label class="form-label">SLA Deadline</label><input type="datetime-local" class="form-input" id="ct-sla"/></div>
+    </div>
+    <div class="form-field full" style="margin-bottom:14px;"><label class="form-label">Task Description *</label><textarea class="form-input" id="ct-desc" placeholder="Describe the validation failure batch..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-default" onclick="closeModal('create-overlay')">Cancel</button><button class="btn btn-ai" onclick="createTask(true)">&#9889; Create + AI Auto-Assign</button><button class="btn btn-primary" onclick="createTask(false)">Create Task</button></div>
+</div></div>
+<div class="overlay" id="ingest-overlay"><div class="modal" style="max-width:700px;">
+  <div class="modal-header"><div><div class="modal-title">&#8659; Ingest Failed Outcomes</div><div class="modal-subtitle">Add failed outcome records, then auto-generate a task</div></div><div class="modal-close" onclick="closeModal('ingest-overlay')">&#10005;</div></div>
+  <div class="modal-body">
+    <div class="fo-builder"><div class="fo-builder-hdr"><div class="fo-builder-title">Failed Outcome Records</div><button class="btn btn-default btn-sm" onclick="addFORow()">+ Add Record</button></div><div class="fo-list" id="fo-list"></div><div class="text-muted" style="font-size:11px;">Each record represents one failed validation outcome.</div></div>
+    <div class="divider"></div><div class="sec-title">Task Configuration</div>
+    <div class="form-grid">
+      <div class="form-field"><label class="form-label">Queue *</label><select class="form-input queue-dropdown" id="ing-queue"></select></div>
+      <div class="form-field"><label class="form-label">Priority *</label><select class="form-input" id="ing-priority"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+      <div class="form-field"><label class="form-label">Domain *</label><select class="form-input domain-dropdown" id="ing-domain"></select></div>
+      <div class="form-field"><label class="form-label">SLA Deadline</label><input type="datetime-local" class="form-input" id="ing-sla"/></div>
+      <div class="form-field full"><label class="form-label">Task Description</label><input class="form-input" id="ing-desc" placeholder="Auto-generated from failed outcomes..."/></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-default" onclick="closeModal('ingest-overlay')">Cancel</button><button class="btn btn-ai" onclick="ingestAndCreate(true)">&#9889; Ingest + AI Auto-Assign</button><button class="btn btn-primary" onclick="ingestAndCreate(false)">Ingest &amp; Create Task</button></div>
+</div></div>
+<div class="overlay" id="analyst-overlay"><div class="modal" style="max-width:560px;" id="analyst-modal-body"></div></div>
+<div class="overlay" id="ai-overlay"><div class="modal" style="max-width:960px;" id="ai-modal-body"></div></div>
+<div class="overlay" id="guardrail-overlay"><div class="modal" style="max-width:520px;" id="guardrail-modal-body"></div></div>
+<div class="overlay" id="config-overlay"><div class="modal" style="max-width:560px;">
+  <div class="modal-header"><div><div class="modal-title">AI Assignment Settings</div></div><div class="modal-close" onclick="closeModal('config-overlay')">&#10005;</div></div>
+  <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+    <div class="cfg-section"><div class="cfg-section-title">AI Engine</div>
+      <div class="cfg-row"><div class="cfg-row-info"><div class="cfg-row-title">Use n8n AI Agent</div><div class="cfg-row-sub">When ON: calls n8n for AI scoring &amp; chatbot (requires n8n running).<br>When OFF: uses built-in local scoring &amp; local chatbot intelligence.</div></div><label class="toggle" style="margin-left:20px;"><input type="checkbox" id="cfg-use-n8n" onchange="updateConfig()"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="cfg-row" style="border:none;padding:4px 0;"><div class="cfg-row-info"><div id="cfg-n8n-status" style="font-size:11px;color:var(--text4);line-height:1.6;">&#9675; Assign URL not set<br>&#9675; Chat URL not set</div></div></div>
+    </div>
+    <div class="cfg-section"><div class="cfg-section-title">Auto-Assignment</div>
+      <div class="cfg-row"><div class="cfg-row-info"><div class="cfg-row-title">Auto-assign on task creation</div><div class="cfg-row-sub">AI immediately assigns new tasks</div></div><label class="toggle" style="margin-left:20px;"><input type="checkbox" id="cfg-auto" onchange="updateConfig()"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="cfg-row"><div class="cfg-row-info"><div class="cfg-row-title">Show assignment notification</div><div class="cfg-row-sub">Display notification on AI auto-assign</div></div><label class="toggle" style="margin-left:20px;"><input type="checkbox" id="cfg-notif" checked onchange="updateConfig()"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="cfg-row"><div class="cfg-row-info"><div class="cfg-row-title">Auto-assign on ingest</div><div class="cfg-row-sub">Auto-assign tasks from Failed Outcome Ingest</div></div><label class="toggle" style="margin-left:20px;"><input type="checkbox" id="cfg-ingest-auto" onchange="updateConfig()"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    </div>
+    <div class="cfg-section"><div class="cfg-section-title">Scoring Weights (Local Engine)</div>
+      <div class="cfg-row-sub" style="margin-bottom:10px;">Drag sliders to change dimension weights. These affect the local scoring engine. For n8n, edit the prompt in the workflow JSON.</div>
+      <div class="cfg-weight-row"><span class="cfg-w-label">Availability</span><input type="range" min="0" max="50" id="cfg-w-Availability" class="cfg-w-slider" oninput="updateWeights()"/><span class="cfg-w-val" id="cfg-wl-Availability">20%</span></div>
+      <div class="cfg-weight-row"><span class="cfg-w-label">Workload</span><input type="range" min="0" max="50" id="cfg-w-Workload" class="cfg-w-slider" oninput="updateWeights()"/><span class="cfg-w-val" id="cfg-wl-Workload">20%</span></div>
+      <div class="cfg-weight-row"><span class="cfg-w-label">Speciality</span><input type="range" min="0" max="50" id="cfg-w-Speciality" class="cfg-w-slider" oninput="updateWeights()"/><span class="cfg-w-val" id="cfg-wl-Speciality">20%</span></div>
+      <div class="cfg-weight-row"><span class="cfg-w-label">Working Hours</span><input type="range" min="0" max="50" id="cfg-w-Working-Hours" class="cfg-w-slider" oninput="updateWeights()"/><span class="cfg-w-val" id="cfg-wl-Working-Hours">15%</span></div>
+      <div class="cfg-weight-row"><span class="cfg-w-label">Resolution History</span><input type="range" min="0" max="50" id="cfg-w-Resolution-History" class="cfg-w-slider" oninput="updateWeights()"/><span class="cfg-w-val" id="cfg-wl-Resolution-History">13%</span></div>
+      <div class="cfg-weight-row"><span class="cfg-w-label">SLA Fit</span><input type="range" min="0" max="50" id="cfg-w-SLA-Fit" class="cfg-w-slider" oninput="updateWeights()"/><span class="cfg-w-val" id="cfg-wl-SLA-Fit">12%</span></div>
+      <div id="cfg-w-total" style="font-size:11px;color:var(--text4);margin:6px 0 0;padding:6px 0;border-top:1px dashed var(--border);"></div>
+      <div class="cfg-weight-row" style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;"><span class="cfg-w-label">Not Recommended Threshold</span><input type="range" min="0" max="100" id="cfg-not-rec-threshold" class="cfg-w-slider" oninput="updateWeights()"/><span class="cfg-w-val" id="cfg-wl-not-rec">50%</span></div>
+      <div class="cfg-row-sub" style="margin-top:4px;">Analysts scoring below this threshold are shown as "Not Recommended" instead of ranked picks.</div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-primary" onclick="closeModal('config-overlay')">Save Settings</button></div>
+</div></div>
+<button class="chat-trigger" onclick="toggleChat()">&#9889;<div class="chat-unread" id="chat-unread" style="display:flex;">1</div></button>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-hdr"><div style="font-size:18px;">&#9889;</div><div><div class="chat-hdr-title">AI Operations Assistant</div><div class="chat-hdr-sub">&#9679; Agentic AI &middot; Live Data</div></div><button class="chat-hdr-close" onclick="toggleChat()">&#10005;</button></div>
+  <div class="chat-msgs" id="chat-msgs"><div class="chat-msg"><div class="chat-av ai">&#9889;</div><div class="chat-bubble"><strong>Hello!</strong> I'm your AI Operations Assistant. I can answer questions about tasks, SLA compliance, team availability, workload, and more.<br><br>Try asking me something like:<br>&bull; "SLA breaches today"<br>&bull; "Unassigned tasks"<br>&bull; "Who is available in Instruments queue?"</div></div></div>
+  <div class="chat-chips"><div class="chat-chip" onclick="chatSuggest('SLA breaches today')">&#9888; SLA Breaches</div><div class="chat-chip" onclick="chatSuggest('Unassigned tasks')">&#9783; Unassigned</div><div class="chat-chip" onclick="chatSuggest('Team availability')">&#9673; Availability</div><div class="chat-chip" onclick="chatSuggest('Upcoming leaves')">&#128197; Leaves</div><div class="chat-chip" onclick="chatSuggest('Team workload')">&#128202; Workload</div><div class="chat-chip" onclick="chatSuggest('Operations summary')">&#128200; Summary</div></div>
+  <div class="chat-input-row"><input class="chat-input" id="chat-input" placeholder="Ask anything about operations..." onkeydown="if(event.key==='Enter')sendChat()"/><button class="chat-send" onclick="sendChat()">&#10148;</button></div>
+</div>
+<div class="notif-area" id="notif-area"></div>
+</div><!-- /app-root -->
+<script src="lseg-app.js"></script>
+</body>
+</html>
