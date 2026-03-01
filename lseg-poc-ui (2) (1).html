@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LSEG · Data Operations Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --white:#ffffff;
+  --bg:#f3f4f6;
+  --bg2:#e9eaec;
+  --surface:#ffffff;
+  --surface2:#f8f9fa;
+  --surface3:#f0f1f3;
+  --border:#dde0e4;
+  --border2:#c8cbd0;
+  --blue:#0078d4;
+  --blue-dark:#005a9e;
+  --blue-light:#deecf9;
+  --blue-mid:#106ebe;
+  --teal:#038387;
+  --teal-light:#e1f3f4;
+  --red:#d13438;
+  --red-light:#fde7e9;
+  --amber:#ca5010;
+  --amber-light:#fff4ce;
+  --green:#107c10;
+  --green-light:#dff6dd;
+  --purple:#5c2d91;
+  --purple-light:#ede8f5;
+  --text:#1b1b1b;
+  --text2:#424242;
+  --text3:#666666;
+  --text4:#a0a0a0;
+  --shadow:0 1px 3px rgba(0,0,0,0.1),0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.1),0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg:0 10px 30px rgba(0,0,0,0.12),0 4px 8px rgba(0,0,0,0.06);
+  --radius:4px;
+  --radius-md:6px;
+  --radius-lg:8px;
+  --font:'Source Sans 3',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;min-height:100vh;}
+
+/* LAYOUT */
+.shell{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:228px;flex-shrink:0;background:#1b2a3b;display:flex;flex-direction:column;overflow:hidden;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+/* SIDEBAR */
+.sidebar-logo{padding:16px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.logo-top{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:#0078d4;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;letter-spacing:-0.5px;flex-shrink:0;}
+.logo-text{color:#fff;font-size:15px;font-weight:600;letter-spacing:0.2px;}
+.logo-sub{font-size:10px;color:rgba(255,255,255,0.45);margin-top:2px;letter-spacing:0.5px;text-transform:uppercase;padding-left:42px;}
+.nav{flex:1;overflow-y:auto;padding:8px 0;}
+.nav-section-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.35);padding:16px 20px 4px;font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;transition:background 0.15s;color:rgba(255,255,255,0.7);font-size:13.5px;position:relative;user-select:none;}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:#fff;}
+.nav-item.active{background:rgba(0,120,212,0.25);color:#fff;}
+.nav-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:#0078d4;border-radius:0 2px 2px 0;}
+.nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
+.nav-count{margin-left:auto;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);font-size:10px;font-family:var(--font-mono);padding:1px 7px;border-radius:10px;font-weight:500;}
+.nav-count.alert{background:#d13438;color:#fff;}
+.nav-count.warn{background:#ca5010;color:#fff;}
+.sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:#0078d4;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.user-name{font-size:12.5px;font-weight:600;color:#fff;}
+.user-role{font-size:10px;color:rgba(255,255,255,0.45);}
+
+/* TOPBAR */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0;box-shadow:var(--shadow);}
+.page-title{font-size:15px;font-weight:600;color:var(--text);}
+.breadcrumb{font-size:12px;color:var(--text3);margin-left:2px;}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:1px solid transparent;font-family:var(--font);white-space:nowrap;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue-dark);}
+.btn-primary:hover{background:var(--blue-dark);}
+.btn-default{background:var(--surface);color:var(--text2);border-color:var(--border2);}
+.btn-default:hover{background:var(--surface2);border-color:#ababab;}
+.btn-ai{background:var(--teal);color:#fff;border-color:#026e72;}
+.btn-ai:hover{background:#026e72;}
+.btn-danger{background:var(--surface);color:var(--red);border-color:#d13438;}
+.btn-danger:hover{background:var(--red-light);}
+.btn-sm{padding:4px 10px;font-size:12px;}
+.btn-xs{padding:2px 8px;font-size:11px;}
+.btn-icon{padding:5px 8px;min-width:0;}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg);}
+
+/* COMMAND BAR (PowerApps style) */
+.command-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 16px;display:flex;align-items:center;gap:8px;margin-bottom:16px;box-shadow:var(--shadow);flex-wrap:wrap;}
+.cmd-divider{width:1px;height:22px;background:var(--border2);margin:0 4px;}
+.search-box{border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px 5px 30px;font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface2);outline:none;width:200px;transition:border-color 0.2s;}
+.search-box:focus{border-color:var(--blue);background:#fff;}
+.search-wrap{position:relative;}
+.search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text4);font-size:13px;pointer-events:none;}
+select.input{border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface2);outline:none;cursor:pointer;}
+select.input:focus{border-color:var(--blue);}
+.cmd-label{font-size:12px;color:var(--text3);font-weight:500;}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow);border-left:3px solid transparent;}
+.stat-card.c-total{border-left-color:var(--blue);}
+.stat-card.c-active{border-left-color:var(--teal);}
+.stat-card.c-breach{border-left-color:var(--red);}
+.stat-card.c-risk{border-left-color:var(--amber);}
+.stat-card.c-resolved{border-left-color:var(--green);}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;}
+.stat-value{font-size:26px;font-weight:700;color:var(--text);line-height:1;}
+.stat-sub{font-size:11px;color:var(--text4);margin-top:3px;}
+
+/* CONFIG BANNER */
+.config-bar{background:var(--blue-light);border:1px solid #b3d6f5;border-radius:var(--radius-md);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.config-bar-label{font-size:12px;font-weight:600;color:var(--blue-dark);}
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle-label{font-size:12px;color:var(--text2);}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;background:#c0c0c0;border-radius:10px;transition:background 0.2s;}
+.toggle input:checked+.toggle-track{background:var(--blue);}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.toggle input:checked~.toggle-thumb{left:19px;}
+.config-info{margin-left:auto;font-size:11px;color:var(--text3);}
+
+/* TABLE */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow);overflow:hidden;}
+.table-card table{width:100%;border-collapse:collapse;}
+.table-card thead th{background:var(--surface2);padding:9px 12px;text-align:left;font-size:12px;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);white-space:nowrap;user-select:none;}
+.table-card thead th:first-child{padding-left:16px;}
+.table-card tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;cursor:pointer;}
+.table-card tbody tr:hover{background:#f0f6fc;}
+.table-card tbody tr:last-child{border-bottom:none;}
+.table-card tbody td{padding:10px 12px;vertical-align:middle;}
+.table-card tbody td:first-child{padding-left:16px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b-critical{background:var(--red-light);color:var(--red);}
+.b-high{background:var(--amber-light);color:var(--amber);}
+.b-medium{background:var(--blue-light);color:var(--blue-mid);}
+.b-low{background:var(--green-light);color:var(--green);}
+.b-new{background:var(--purple-light);color:var(--purple);}
+.b-active{background:var(--teal-light);color:var(--teal);}
+.b-blocked{background:var(--red-light);color:var(--red);}
+.b-resolved{background:var(--green-light);color:var(--green);}
+.b-closed{background:#f0f0f0;color:#666;}
+.b-tag{background:var(--surface3);color:var(--text2);border:1px solid var(--border);}
+
+/* SLA PILL */
+.sla-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:3px;font-size:11px;font-weight:600;font-family:var(--font-mono);}
+.sla-breached{background:var(--red-light);color:var(--red);}
+.sla-risk{background:var(--amber-light);color:var(--amber);}
+.sla-ok{background:var(--green-light);color:var(--green);}
+.sla-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.sla-dot.pulse{animation:slapulse 1.5s ease-in-out infinite;}
+@keyframes slapulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ASSIGNEE CELL + AI INFO TOOLTIP */
+.assignee-wrap{display:inline-flex;align-items:center;gap:7px;position:relative;}
+.av-chip{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.av-js{background:#0078d4;}
+.av-hp{background:#c239b3;}
+.av-vd{background:#107c10;}
+.av-ww{background:#ca5010;}
+.ai-badge-btn{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:3px;background:var(--teal-light);color:var(--teal);font-size:10px;font-weight:600;border:1px solid #b0dfe0;cursor:pointer;transition:background 0.15s;}
+.ai-badge-btn:hover{background:#c5eaeb;}
+.unassigned-tag{font-size:12px;color:var(--text4);font-style:italic;}
+
+/* AI INFO POPOVER */
+.ai-popover{position:absolute;top:calc(100% + 6px);left:0;z-index:200;width:300px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:14px;display:none;}
+.ai-popover.show{display:block;}
+.pop-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.pop-title{font-size:12px;font-weight:700;color:var(--text);}
+.pop-score{margin-left:auto;font-size:18px;font-weight:700;color:var(--teal);font-family:var(--font-mono);}
+.pop-scores{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.pop-score-row{display:flex;flex-direction:column;gap:3px;}
+.pop-score-row-hdr{display:flex;justify-content:space-between;align-items:center;}
+.pop-score-label{font-size:11px;color:var(--text2);font-weight:600;}
+.pop-score-val{font-size:11px;font-family:var(--font-mono);font-weight:700;}
+.pop-bar-bg{width:100%;height:6px;background:#e8eaed;border-radius:3px;overflow:hidden;}
+.pop-bar-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+.pop-bar-fill.score-high{background:#107c10;}
+.pop-bar-fill.score-mid{background:#0078d4;}
+.pop-bar-fill.score-low{background:#ca5010;}
+.pop-bar-fill.score-zero{background:#d9d9d9;}
+.pop-reasoning{font-size:11.5px;color:var(--text2);line-height:1.55;margin-bottom:8px;background:var(--surface2);padding:8px;border-radius:var(--radius);border-left:3px solid var(--blue);}
+.pop-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.pop-tag{padding:2px 7px;background:var(--blue-light);color:var(--blue-mid);border-radius:3px;font-size:10px;font-weight:600;}
+.pop-tag.risk{background:var(--amber-light);color:var(--amber);}
+.pop-method{font-size:10px;color:var(--text4);margin-top:6px;display:flex;align-items:center;gap:4px;}
+
+/* TASK REF */
+.task-ref-link{font-family:var(--font-mono);font-size:12px;color:var(--blue);font-weight:500;}
+.task-desc-main{font-size:13px;color:var(--text);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.task-desc-sub{font-size:11px;color:var(--text4);margin-top:1px;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;box-shadow:var(--shadow-lg);transform:translateY(12px);transition:transform 0.2s;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;}
+.overlay.open .modal{transform:translateY(0);}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;background:var(--surface);z-index:10;}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);}
+.modal-subtitle{font-size:12px;color:var(--text3);margin-top:2px;}
+.modal-close{width:28px;height:28px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;transition:all 0.15s;}
+.modal-close:hover{background:var(--red-light);color:var(--red);border-color:var(--red);}
+.modal-body{padding:20px;flex:1;}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;background:var(--surface2);}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;}
+.form-field{display:flex;flex-direction:column;gap:4px;}
+.form-field.full{grid-column:1/-1;}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);}
+.form-input{border:1px solid var(--border2);border-radius:var(--radius);padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--text);background:#fff;outline:none;width:100%;transition:border-color 0.2s;}
+.form-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(0,120,212,0.15);}
+.form-input:disabled{background:var(--surface2);color:var(--text4);}
+textarea.form-input{resize:vertical;min-height:70px;}
+.form-hint{font-size:11px;color:var(--text4);}
+
+/* SECTION TITLE */
+.sec-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec-title span{font-size:11px;color:var(--text3);font-weight:400;}
+
+/* META GRID */
+.meta-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.meta-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+.meta-key{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.meta-val{font-size:13px;font-weight:600;color:var(--text);}
+
+/* OUTCOMES TABLE */
+.outcomes-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.outcomes-tbl th{padding:7px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);background:var(--surface2);border-bottom:2px solid var(--border);}
+.outcomes-tbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.outcomes-tbl tr:last-child td{border-bottom:none;}
+.outcomes-tbl tr:hover td{background:#f8fbff;}
+
+/* AI SUGGESTIONS PANEL */
+.ai-panel{background:linear-gradient(135deg,#f0f7ff 0%,#f0fcfc 100%);border:1px solid #b3d6f5;border-radius:var(--radius-md);padding:16px;margin-bottom:18px;}
+.ai-panel-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.ai-panel-icon{width:32px;height:32px;background:var(--teal);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;}
+.ai-panel-title{font-size:13px;font-weight:700;color:var(--text);}
+.ai-panel-sub{font-size:11px;color:var(--text3);}
+.suggestions-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.sug-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;cursor:pointer;transition:all 0.2s;position:relative;}
+.sug-card:hover{border-color:var(--blue);box-shadow:var(--shadow-md);}
+.sug-card.top-pick{border-color:var(--teal);border-width:2px;}
+.sug-rank{position:absolute;top:-9px;left:12px;background:var(--teal);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.sug-rank.r2{background:var(--blue);}
+.sug-rank.r3{background:var(--text3);}
+.sug-analyst-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.sug-name{font-size:13px;font-weight:700;color:var(--text);}
+.sug-exp{font-size:11px;color:var(--text4);}
+.sug-score-big{margin-left:auto;font-size:20px;font-weight:700;color:var(--teal);font-family:var(--font-mono);}
+.sug-score-big.r2{color:var(--blue);}
+.sug-score-big.r3{color:var(--text3);}
+.sug-bars{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.sug-bar-row{display:flex;flex-direction:column;gap:2px;}
+.sug-bar-row-hdr{display:flex;justify-content:space-between;}
+.sug-bar-label{font-size:10px;color:var(--text2);font-weight:600;}
+.sug-bar-val-lbl{font-size:10px;font-family:var(--font-mono);font-weight:700;}
+.sug-bar-bg{width:100%;height:5px;background:#e8eaed;border-radius:2px;overflow:hidden;}
+.sug-bar-fill{height:100%;border-radius:2px;}
+.sug-bar-val{font-size:10px;font-family:var(--font-mono);color:var(--text3);width:26px;text-align:right;}
+.sug-reasoning{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:8px;}
+.sug-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.sug-tag{padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;}
+.sug-tag.strength{background:var(--green-light);color:var(--green);}
+.sug-tag.risk{background:var(--amber-light);color:var(--amber);}
+.sug-tag.queue{background:var(--blue-light);color:var(--blue-mid);}
+.sug-select{width:100%;margin-top:4px;}
+
+/* RESOLUTION GUIDE */
+.res-guide{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--radius);padding:14px;margin-bottom:18px;}
+.res-guide-title{font-size:12px;font-weight:700;color:var(--blue-dark);margin-bottom:8px;}
+.res-steps{padding-left:16px;display:flex;flex-direction:column;gap:5px;}
+.res-steps li{font-size:12.5px;color:var(--text2);line-height:1.5;}
+
+/* TABS */
+.modal-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;}
+.modal-tab{padding:8px 16px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;}
+.modal-tab:hover{color:var(--text2);}
+.modal-tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* ANALYST CARDS */
+.analyst-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.analyst-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;box-shadow:var(--shadow);}
+.analyst-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.analyst-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.analyst-name{font-size:14px;font-weight:700;color:var(--text);}
+.analyst-email{font-size:11px;color:var(--text4);}
+.avail-badge{margin-left:auto;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:600;}
+.avail-yes{background:var(--green-light);color:var(--green);}
+.avail-no{background:var(--red-light);color:var(--red);}
+.analyst-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.a-stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;text-align:center;}
+.a-stat-val{font-size:18px;font-weight:700;font-family:var(--font-mono);}
+.a-stat-lbl{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:0.3px;}
+.cap-bar-wrap{margin-bottom:10px;}
+.cap-bar-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:3px;}
+.cap-bar-bg{height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;}
+.cap-bar-fill{height:100%;border-radius:3px;}
+.skill-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.skill-chip{padding:2px 8px;background:var(--blue-light);color:var(--blue-mid);border-radius:3px;font-size:10px;font-weight:600;}
+.skill-chip.queue{background:var(--teal-light);color:var(--teal);}
+.avail-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:6px;}
+.avail-day{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 4px;text-align:center;}
+.avail-day-lbl{font-size:9px;color:var(--text4);font-weight:600;text-transform:uppercase;}
+.avail-dot{width:8px;height:8px;border-radius:50%;margin:3px auto 0;}
+.avail-dot.yes{background:var(--green);}
+.avail-dot.no{background:var(--red);}
+
+/* SLA PAGE */
+.sla-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px;}
+.sla-group-hdr{padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:8px;}
+.sla-group-title{font-size:13px;font-weight:700;color:var(--text);}
+.sla-row{display:flex;align-items:center;gap:14px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;}
+.sla-row:hover{background:#f0f6fc;}
+.sla-row:last-child{border-bottom:none;}
+.sla-priority-bar{width:4px;height:34px;border-radius:2px;flex-shrink:0;}
+.sla-row-info{flex:1;min-width:0;}
+.sla-row-ref{font-family:var(--font-mono);font-size:11px;color:var(--blue);font-weight:500;}
+.sla-row-desc{font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px;}
+.sla-countdown{font-family:var(--font-mono);font-size:12px;font-weight:700;padding:3px 10px;border-radius:3px;white-space:nowrap;}
+
+/* CHATBOT */
+.chat-trigger{position:fixed;bottom:24px;right:24px;z-index:90;width:48px;height:48px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-md);font-size:20px;border:none;transition:all 0.2s;}
+.chat-trigger:hover{background:var(--blue-dark);transform:scale(1.05);}
+.chat-unread{position:absolute;top:-3px;right:-3px;width:16px;height:16px;background:var(--red);border-radius:50%;border:2px solid #fff;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;}
+.chat-panel{position:fixed;bottom:82px;right:24px;z-index:89;width:360px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;transform:scale(0.95) translateY(10px);opacity:0;pointer-events:none;transition:all 0.2s ease;overflow:hidden;max-height:500px;}
+.chat-panel.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+.chat-hdr{padding:12px 14px;background:var(--blue);color:#fff;display:flex;align-items:center;gap:10px;}
+.chat-hdr-title{font-size:13px;font-weight:700;}
+.chat-hdr-sub{font-size:10px;opacity:0.8;}
+.chat-hdr-close{margin-left:auto;background:rgba(255,255,255,0.15);border:none;color:#fff;width:24px;height:24px;border-radius:var(--radius);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.chat-hdr-close:hover{background:rgba(255,255,255,0.25);}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:250px;max-height:290px;}
+.chat-msg{display:flex;gap:7px;max-width:88%;}
+.chat-msg.user{flex-direction:row-reverse;align-self:flex-end;}
+.chat-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.chat-av.ai{background:var(--blue);color:#fff;}
+.chat-av.usr{background:var(--teal);color:#fff;}
+.chat-bubble{padding:8px 11px;border-radius:var(--radius-md);font-size:12.5px;line-height:1.5;color:var(--text);}
+.chat-msg:not(.user) .chat-bubble{background:var(--surface2);border:1px solid var(--border);}
+.chat-msg.user .chat-bubble{background:var(--blue);color:#fff;border:1px solid var(--blue-dark);}
+.chat-typing{display:flex;gap:3px;align-items:center;padding:2px 0;}
+.typing-dot{width:5px;height:5px;background:var(--text4);border-radius:50%;animation:tdot 1.4s infinite;}
+.typing-dot:nth-child(2){animation-delay:0.2s;}
+.typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes tdot{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-4px);}}
+.chat-chips{padding:0 12px 8px;display:flex;flex-wrap:wrap;gap:5px;}
+.chat-chip{padding:3px 9px;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;font-size:11px;color:var(--text2);cursor:pointer;transition:all 0.15s;}
+.chat-chip:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue);}
+.chat-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:7px;}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12.5px;font-family:var(--font);color:var(--text);background:#fff;outline:none;}
+.chat-input:focus{border-color:var(--blue);}
+.chat-send{background:var(--blue);border:none;border-radius:var(--radius);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;transition:background 0.15s;flex-shrink:0;}
+.chat-send:hover{background:var(--blue-dark);}
+
+/* NOTIFICATION */
+.notif-area{position:fixed;top:16px;right:20px;z-index:400;display:flex;flex-direction:column;gap:8px;}
+.notif{background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:flex-start;gap:10px;min-width:300px;max-width:380px;box-shadow:var(--shadow-lg);animation:notif-in 0.3s ease;}
+.notif.success{border-left:3px solid var(--green);}
+.notif.error{border-left:3px solid var(--red);}
+.notif.info{border-left:3px solid var(--blue);}
+.notif.warn{border-left:3px solid var(--amber);}
+.notif-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.notif-body .notif-title{font-size:12.5px;font-weight:700;color:var(--text);}
+.notif-body .notif-msg{font-size:11.5px;color:var(--text3);margin-top:2px;}
+@keyframes notif-in{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* FAILED OUTCOME BUILDER */
+.fo-builder{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;}
+.fo-builder-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.fo-builder-title{font-size:13px;font-weight:700;color:var(--text);}
+.fo-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.fo-item{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center;}
+.fo-item-idx{font-family:var(--font-mono);font-size:11px;color:var(--text4);text-align:center;}
+.fo-remove{background:var(--red-light);border:1px solid #fbd1d2;border-radius:var(--radius);padding:4px 8px;cursor:pointer;color:var(--red);font-size:12px;font-weight:600;}
+.fo-remove:hover{background:#fbd1d2;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:#ababab;}
+
+/* MISC */
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.text-muted{color:var(--text4);font-size:12px;}
+.mono{font-family:var(--font-mono);}
+.flex-center{display:flex;align-items:center;}
+.gap-6{gap:6px;}
+.empty-state{text-align:center;padding:36px;color:var(--text4);}
+.empty-state .empty-icon{font-size:32px;margin-bottom:8px;opacity:0.4;}
+.empty-state .empty-text{font-size:13px;}
+
+/* CONFIG MODAL special */
+.cfg-section{margin-bottom:20px;}
+.cfg-section-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
+.cfg-row-info .cfg-row-title{font-size:13px;font-weight:600;color:var(--text);}
+.cfg-row-info .cfg-row-sub{font-size:11px;color:var(--text4);margin-top:2px;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-top">
+        <div class="logo-icon">LS</div>
+        <div class="logo-text">LSEG</div>
+      </div>
+      <div class="logo-sub">Data Operations Hub</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section-label">Operations</div>
+      <div class="nav-item active" id="nav-tasks" onclick="showPage('tasks')">
+        <span class="nav-icon">&#9783;</span> Task Queue
+        <span class="nav-count alert" id="badge-open">5</span>
+      </div>
+      <div class="nav-item" id="nav-sla" onclick="showPage('sla')">
+        <span class="nav-icon">&#9203;</span> SLA Monitor
+        <span class="nav-count warn" id="badge-sla">2</span>
+      </div>
+      <div class="nav-item" id="nav-team" onclick="showPage('team')">
+        <span class="nav-icon">&#9673;</span> Team
+      </div>
+      <div class="nav-section-label">Queues</div>
+      <div class="nav-item" id="nav-q-instruments" onclick="filterQueue('Instruments')">
+        <span class="nav-icon">&#8920;</span> Instruments
+        <span class="nav-count">3</span>
+      </div>
+      <div class="nav-item" id="nav-q-quotes" onclick="filterQueue('Quotes')">
+        <span class="nav-icon">&#8920;</span> Quotes
+        <span class="nav-count warn">1</span>
+      </div>
+      <div class="nav-item" id="nav-q-bonds" onclick="filterQueue('Bonds')">
+        <span class="nav-icon">&#8920;</span> Bonds
+        <span class="nav-count">2</span>
+      </div>
+      <div class="nav-section-label">Tools</div>
+      <div class="nav-item" onclick="openIngestModal()">
+        <span class="nav-icon">&#8659;</span> Ingest Failures
+      </div>
+      <div class="nav-item" onclick="openConfigModal()">
+        <span class="nav-icon">&#9881;</span> AI Settings
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-avatar">JS</div>
+      <div>
+        <div class="user-name">John Snow</div>
+        <div class="user-role">Senior Analyst</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="page-title">Task Queue</div>
+        <div class="breadcrumb" id="page-bc">All Queues &middot; All Status</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-default btn-sm" onclick="openIngestModal()">&#8659; Ingest Failed Outcomes</button>
+        <button class="btn btn-default btn-sm" onclick="openCreateTaskModal()">+ New Task</button>
+        <button class="btn btn-ai btn-sm" onclick="bulkAutoAssign()">&#9889; AI Auto-Assign All Unassigned</button>
+      </div>
+    </div>
+    <div class="content" id="main-content"></div>
+  </div>
+</div>
+
+<!-- TASK DETAIL MODAL -->
+<div class="overlay" id="task-overlay">
+  <div class="modal" style="max-width:860px;" id="task-modal-body"></div>
+</div>
+
+<!-- CREATE TASK MODAL -->
+<div class="overlay" id="create-overlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div><div class="modal-title">Create New Task</div><div class="modal-subtitle">Manually define a task for the queue</div></div>
+      <div class="modal-close" onclick="closeModal('create-overlay')">&#10005;</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Queue *</label>
+          <select class="form-input" id="ct-queue">
+            <option>Instruments</option><option>Quotes</option><option>Bonds</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Priority *</label>
+          <select class="form-input" id="ct-priority">
+            <option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Domain *</label>
+          <select class="form-input" id="ct-domain">
+            <option>CIQM</option><option>EM</option><option>DIQM</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Due Date</label>
+          <input type="datetime-local" class="form-input" id="ct-due"/>
+        </div>
+      </div>
+      <div class="form-field full" style="margin-bottom:14px;">
+        <label class="form-label">Task Description *</label>
+        <textarea class="form-input" id="ct-desc" placeholder="Describe the validation failure batch..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('create-overlay')">Cancel</button>
+      <button class="btn btn-ai" onclick="createTask(true)">&#9889; Create + AI Auto-Assign</button>
+      <button class="btn btn-primary" onclick="createTask(false)">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- INGEST FAILED OUTCOMES MODAL -->
+<div class="overlay" id="ingest-overlay">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <div><div class="modal-title">&#8659; Ingest Failed Outcomes</div><div class="modal-subtitle">Add failed outcome records, then auto-generate a task</div></div>
+      <div class="modal-close" onclick="closeModal('ingest-overlay')">&#10005;</div>
+    </div>
+    <div class="modal-body">
+      <div class="fo-builder">
+        <div class="fo-builder-hdr">
+          <div class="fo-builder-title">Failed Outcome Records</div>
+          <button class="btn btn-default btn-sm" onclick="addFORow()">+ Add Record</button>
+        </div>
+        <div class="fo-list" id="fo-list">
+          <!-- rows inserted by JS -->
+        </div>
+        <div class="text-muted" style="font-size:11px;">Each record represents one failed validation outcome.</div>
+      </div>
+      <div class="divider"></div>
+      <div class="sec-title">Task Configuration</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Queue *</label>
+          <select class="form-input" id="ing-queue"><option>Instruments</option><option>Quotes</option><option>Bonds</option></select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Priority *</label>
+          <select class="form-input" id="ing-priority"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Domain *</label>
+          <select class="form-input" id="ing-domain"><option>CIQM</option><option>EM</option><option>DIQM</option></select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Due Date</label>
+          <input type="datetime-local" class="form-input" id="ing-due"/>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">Task Description</label>
+          <input class="form-input" id="ing-desc" placeholder="Auto-generated from failed outcomes or enter manually..."/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('ingest-overlay')">Cancel</button>
+      <button class="btn btn-ai" onclick="ingestAndCreate(true)">&#9889; Ingest + AI Auto-Assign</button>
+      <button class="btn btn-primary" onclick="ingestAndCreate(false)">Ingest &amp; Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI ASSIGN MODAL -->
+<div class="overlay" id="ai-overlay">
+  <div class="modal" style="max-width:780px;" id="ai-modal-body"></div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="overlay" id="config-overlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div><div class="modal-title">AI Assignment Settings</div><div class="modal-subtitle">Configure how tasks are automatically assigned</div></div>
+      <div class="modal-close" onclick="closeModal('config-overlay')">&#10005;</div>
+    </div>
+    <div class="modal-body">
+      <div class="cfg-section">
+        <div class="cfg-section-title">Auto-Assignment</div>
+        <div class="cfg-row">
+          <div class="cfg-row-info">
+            <div class="cfg-row-title">Auto-assign on task creation</div>
+            <div class="cfg-row-sub">AI immediately assigns new tasks as soon as they are created</div>
+          </div>
+          <label class="toggle" style="margin-left:20px;">
+            <input type="checkbox" id="cfg-auto" onchange="updateConfig()"/>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-row-info">
+            <div class="cfg-row-title">Show assignment notification</div>
+            <div class="cfg-row-sub">Display a notification banner when AI auto-assigns a task</div>
+          </div>
+          <label class="toggle" style="margin-left:20px;">
+            <input type="checkbox" id="cfg-notif" checked onchange="updateConfig()"/>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-row-info">
+            <div class="cfg-row-title">Auto-assign on ingest</div>
+            <div class="cfg-row-sub">Automatically assign tasks created via Failed Outcome Ingest</div>
+          </div>
+          <label class="toggle" style="margin-left:20px;">
+            <input type="checkbox" id="cfg-ingest-auto" onchange="updateConfig()"/>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-section-title">Scoring Weights</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">These weights determine how AI ranks analysts for each task.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="cfg-row" style="padding:4px 0;">
+            <span class="cfg-row-info"><div class="cfg-row-title" style="font-size:12.5px;">Availability &amp; OOO</div></span>
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);">25%</span>
+          </div>
+          <div class="cfg-row" style="padding:4px 0;">
+            <span class="cfg-row-info"><div class="cfg-row-title" style="font-size:12.5px;">Current Workload</div></span>
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);">20%</span>
+          </div>
+          <div class="cfg-row" style="padding:4px 0;">
+            <span class="cfg-row-info"><div class="cfg-row-title" style="font-size:12.5px;">Queue Expertise Match</div></span>
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);">20%</span>
+          </div>
+          <div class="cfg-row" style="padding:4px 0;">
+            <span class="cfg-row-info"><div class="cfg-row-title" style="font-size:12.5px;">Past Performance (Vector)</div></span>
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);">20%</span>
+          </div>
+          <div class="cfg-row" style="padding:4px 0;">
+            <span class="cfg-row-info"><div class="cfg-row-title" style="font-size:12.5px;">SLA Urgency Fit</div></span>
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);">10%</span>
+          </div>
+          <div class="cfg-row" style="padding:4px 0;">
+            <span class="cfg-row-info"><div class="cfg-row-title" style="font-size:12.5px;">Experience Years</div></span>
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);">5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('config-overlay')">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHATBOT -->
+<button class="chat-trigger" onclick="toggleChat()">
+  &#129302;
+  <div class="chat-unread" id="chat-unread" style="display:flex;">1</div>
+</button>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-hdr">
+    <div style="font-size:18px;">&#129302;</div>
+    <div>
+      <div class="chat-hdr-title">LSEG AI Assistant</div>
+      <div class="chat-hdr-sub">&#9679; Online</div>
+    </div>
+    <button class="chat-hdr-close" onclick="toggleChat()">&#10005;</button>
+  </div>
+  <div class="chat-msgs" id="chat-msgs">
+    <div class="chat-msg">
+      <div class="chat-av ai">AI</div>
+      <div class="chat-bubble">Hello! I can help with SLA monitoring, team availability, task assignment, and resolution guidance. Try one of the quick options below.</div>
+    </div>
+  </div>
+  <div class="chat-chips">
+    <div class="chat-chip" onclick="chatSuggest('Tasks breaching SLA today')">SLA breaches today</div>
+    <div class="chat-chip" onclick="chatSuggest('Top 3 SLA risks')">Top 3 SLA risks</div>
+    <div class="chat-chip" onclick="chatSuggest('Instruments queue availability today')">Team availability</div>
+    <div class="chat-chip" onclick="chatSuggest('How to resolve ISIN null failure')">ISIN null fix</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chat-input" placeholder="Ask about tasks, SLA, team..." onkeydown="if(event.key==='Enter')sendChat()"/>
+    <button class="chat-send" onclick="sendChat()">&#10148;</button>
+  </div>
+</div>
+
+<!-- NOTIFICATION AREA -->
+<div class="notif-area" id="notif-area"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+var ANALYSTS = [
+  // Instruments-primary (overlap: John Snow also in Bonds)
+  {id:'a1',name:'John Snow',    initials:'JS',cls:'av-js',color:'#0078d4',exp:5,queues:['Instruments','Bonds'],  skills:['ISIN','CFI Code','Equities','Bonds'],        max:6,active:3},
+  {id:'a2',name:'Harry Potter', initials:'HP',cls:'av-hp',color:'#c239b3',exp:3,queues:['Instruments','Quotes'], skills:['ISIN','Derivatives','Quotes'],               max:5,active:2},
+  {id:'a4',name:'White Walker', initials:'WW',cls:'av-ww',color:'#ca5010',exp:2,queues:['Instruments'],          skills:['ISIN','Equities'],                           max:4,active:1},
+  {id:'a5',name:'Lyanna Mormont',initials:'LM',cls:'av-lm',color:'#5c2d91',exp:4,queues:['Instruments'],         skills:['ISIN','Reference Data','Equities'],          max:5,active:2},
+  // Quotes-primary (overlap: Harry Potter also in Instruments)
+  {id:'a6',name:'Sansa Stark',  initials:'SS',cls:'av-ss',color:'#038387',exp:4,queues:['Quotes'],               skills:['Quotes','Market Data','Derivatives'],        max:5,active:1},
+  {id:'a7',name:'Arya Stark',   initials:'AS',cls:'av-as',color:'#ca5010',exp:3,queues:['Quotes'],               skills:['Quotes','Equities','FX'],                   max:5,active:2},
+  // Bonds-primary (overlap: John Snow also in Instruments, Voldemort also in Bonds)
+  {id:'a3',name:'Voldemort',    initials:'VD',cls:'av-vd',color:'#107c10',exp:7,queues:['Bonds'],                 skills:['Bonds','CFI Code','Fixed Income','Sovereign'],max:7,active:4},
+  {id:'a8',name:'Robb Stark',   initials:'RS',cls:'av-rs',color:'#8b0000',exp:5,queues:['Bonds'],                 skills:['Bonds','Fixed Income','CFI Code'],           max:6,active:2}
+];
+var AVAIL = {
+  a1:[true, true, false,false,true],
+  a2:[true, true, true, true, true],
+  a3:[true, false,false,true, true],
+  a4:[false,true, true, true, true],
+  a5:[true, true, true, false,false],
+  a6:[true, true, true, true, true],
+  a7:[false,true, true, true, true],
+  a8:[true, true, true, false,true]
+};
+var AVAIL_NOTES = {
+  a1:[null,  null,  'OOO Annual Leave','OOO Annual Leave',null],
+  a2:[null,  null,  null,              null,              null],
+  a3:[null,  'OOO Conference','OOO Conference',null,      null],
+  a4:['Sick Leave',null,null,null,null],
+  a5:[null,  null,  null,              'Training Day',    'Training Day'],
+  a6:[null,  null,  null,              null,              null],
+  a7:['OOO', null,  null,              null,              null],
+  a8:[null,  null,  null,              'Annual Leave',    null]
+};
+var DAYS = ['Today','Tue','Wed','Thu','Fri'];
+
+function now(){return new Date();}
+function h(n){return new Date(now().getTime()+n*3600000);}
+function hm(n){return new Date(now().getTime()-n*3600000);}
+
+var AI_SCORES = {
+  // TSK-002: Bonds queue - eligible: a1 (JS), a3 (Voldemort), a8 (Robb Stark)
+  t2:[
+    {rank:1,aid:'a3',score:91,reasoning:'Voldemort leads Bonds with 7 yrs experience and the strongest CFI Code regex resolution record. Capacity at 57%, within threshold for High priority.',scores:{Availability:100,Workload:71,'Queue Match':100,'Past Performance':88,'SLA Fit':90,Experience:100},strengths:['Bonds Expert','CFI Code Specialist','7 Years Exp'],risks:[]},
+    {rank:2,aid:'a1',score:78,reasoning:'John Snow covers both Instruments and Bonds. Available today with solid CFI Code track record, slightly higher workload.',scores:{Availability:100,Workload:50,'Queue Match':90,'Past Performance':72,'SLA Fit':80,Experience:85},strengths:['Bonds Trained','Dual Queue'],risks:['Higher workload']},
+    {rank:3,aid:'a8',score:65,reasoning:'Robb Stark is a Bonds specialist with good Fixed Income background, but less CFI regex history compared to top picks.',scores:{Availability:100,Workload:67,'Queue Match':85,'Past Performance':58,'SLA Fit':75,Experience:80},strengths:['Bonds Specialist','Available'],risks:['Limited CFI regex history']}
+  ],
+  // TSK-005: Bonds queue - eligible: a1 (JS), a3 (Voldemort), a8 (Robb Stark)
+  t5:[
+    {rank:1,aid:'a3',score:88,reasoning:'Voldemort: fastest Bonds CFI null resolution (avg 34 min). Critical SLA already breached - highest skill needed immediately.',scores:{Availability:100,Workload:57,'Queue Match':100,'Past Performance':92,'SLA Fit':100,Experience:100},strengths:['Fastest CFI Resolution','Critical Task Exp','7 Yrs Bonds'],risks:['OOO from tomorrow']},
+    {rank:2,aid:'a1',score:82,reasoning:'John Snow has Bonds expertise and is fully available. Strong CFI null history, best backup option for this critical breach.',scores:{Availability:100,Workload:50,'Queue Match':100,'Past Performance':88,'SLA Fit':90,Experience:85},strengths:['Bonds+Instruments Dual','Fast Resolution'],risks:['Active on TSK-001']},
+    {rank:3,aid:'a8',score:60,reasoning:'Robb Stark available in Bonds queue but limited CFI null history. Can handle with guidance if top two are at capacity.',scores:{Availability:100,Workload:67,'Queue Match':85,'Past Performance':55,'SLA Fit':70,Experience:80},strengths:['Bonds Trained','Available'],risks:['Limited CFI null exp']}
+  ],
+  // TSK-006: Instruments queue - eligible: a1 (JS), a2 (HP), a4 (WW), a5 (Lyanna)
+  t6:[
+    {rank:1,aid:'a5',score:87,reasoning:'Lyanna Mormont specialises in Instruments ISIN validation, low current workload (40% capacity). Best fit for this low-priority task.',scores:{Availability:100,Workload:40,'Queue Match':100,'Past Performance':78,'SLA Fit':95,Experience:70},strengths:['ISIN Specialist','Low Workload','Instruments Expert'],risks:[]},
+    {rank:2,aid:'a2',score:79,reasoning:'Harry Potter available and experienced in both Instruments and Quotes. Good ISIN track record, ideal secondary option.',scores:{Availability:100,Workload:60,'Queue Match':90,'Past Performance':75,'SLA Fit':95,Experience:60},strengths:['Available Now','ISIN Trained'],risks:[]},
+    {rank:3,aid:'a4',score:55,reasoning:'White Walker is an Instruments specialist but unavailable today (sick leave). Returns tomorrow which is within the 48h SLA window.',scores:{Availability:0,Workload:75,'Queue Match':100,'Past Performance':70,'SLA Fit':90,Experience:45},strengths:['Instruments Specialist'],risks:['Unavailable today']}
+  ]
+};
+
+var TASKS = [
+  {id:'t1',ref:'TSK-001',desc:'ISIN null validation failures - Batch 2024-02-19',priority:'Critical',queue:'Instruments',status:'Active',assignee:'a1',due:h(2),sla:h(4),domain:'CIQM',created:hm(2),assignedBy:'AI_AUTO',outcomes:5,open:5,field:'ISIN',rule:'expect_column_values_to_not_be_null',
+    aiScore:{aid:'a1',score:91,reasoning:'John Snow is the top-ranked Instruments analyst for ISIN null failures. Historical avg resolution of 42 min — fastest in the team for this field. Available today, workload at 50% capacity. pgvector similarity search matched 8 past ISIN null tasks with 94% relevance score.',scores:{Availability:100,Workload:50,'Queue Match':100,'Past Performance':95,'SLA Fit':100,Experience:85},strengths:['ISIN Specialist','Fastest Resolver','Instruments Expert'],risks:[]}},
+  {id:'t2',ref:'TSK-002',desc:'CFI Code regex mismatch - Bond instruments',priority:'High',queue:'Bonds',status:'New',assignee:null,due:h(6),sla:h(8),domain:'DIQM',created:hm(0.5),assignedBy:null,outcomes:3,open:3,field:'CFI Code',rule:'expect_column_values_to_match_regex',aiScore:null},
+  {id:'t3',ref:'TSK-003',desc:'Effective To/From date range violations',priority:'Medium',queue:'Instruments',status:'Active',assignee:'a2',due:h(20),sla:h(24),domain:'EM',created:hm(4),assignedBy:'AI_SUGGESTED',outcomes:4,open:4,field:'Effective To/From',rule:'Effective To should be greater than Effective From',aiScore:{rank:1,aid:'a2',score:82,reasoning:'Harry Potter has strong Instruments queue experience and was available with capacity when this task was created. Past performance on date validation tasks averages 95 min.',scores:{Availability:100,Workload:60,'Queue Match':90,'Past Performance':80,'SLA Fit':90,Experience:60},strengths:['Instruments Trained','Date Validation Exp'],risks:[],eta:95}},
+  {id:'t4',ref:'TSK-004',desc:'ISIN regex pattern failures - Quote data',priority:'High',queue:'Quotes',status:'Blocked',assignee:'a3',due:h(4),sla:h(6),domain:'CIQM',created:hm(5),assignedBy:'MANUAL',outcomes:6,open:6,field:'ISIN',rule:'expect_column_values_to_match_regex',aiScore:null},
+  {id:'t5',ref:'TSK-005',desc:'Multiple CFI Code null values - Bonds batch',priority:'Critical',queue:'Bonds',status:'New',assignee:null,due:h(-1),sla:h(-0.5),domain:'DIQM',created:hm(1),assignedBy:null,outcomes:7,open:7,field:'CFI Code',rule:'expect_column_values_to_not_be_null',aiScore:null},
+  {id:'t6',ref:'TSK-006',desc:'ISIN validation batch failure - Instruments morning',priority:'Low',queue:'Instruments',status:'New',assignee:null,due:h(46),sla:h(48),domain:'EM',created:hm(0.2),assignedBy:null,outcomes:2,open:2,field:'ISIN',rule:'expect_column_values_to_not_be_null',aiScore:null},
+  {id:'t7',ref:'TSK-007',desc:'Quote ISIN null check - Morning batch',priority:'Medium',queue:'Quotes',status:'Resolved',assignee:'a2',due:hm(2),sla:hm(1),domain:'CIQM',created:hm(12),assignedBy:'AI_AUTO',outcomes:4,open:0,field:'ISIN',rule:'expect_column_values_to_not_be_null',aiScore:{rank:1,aid:'a2',score:87,reasoning:'Harry Potter selected: highest availability score, strong Quotes queue expertise, 3 similar past resolutions averaging 115 min resolution time. Well within office hours.',scores:{Availability:100,Workload:60,'Queue Match':90,'Past Performance':88,'SLA Fit':90,Experience:60},strengths:['Quotes Expert','ISIN Specialist','Available'],risks:[],eta:115}}
+];
+
+var KB = {
+  'ISIN':{'expect_column_values_to_not_be_null':{title:'Resolving ISIN Null Value Failures',steps:['Navigate to the failed outcome record and note the Record ID.','Cross-reference with the upstream source (Bloomberg/Refinitiv) using any available instrument identifier.','If ISIN is genuinely missing, escalate to the data vendor team with the Record IDs.','If found in the source system, manually patch the record and mark outcome as Resolved.','Document the root cause in resolution notes (e.g. Missing at source - patched from Bloomberg).','Flag to Data Engineering if this is a recurring pattern from the same source.']},'expect_column_values_to_match_regex':{title:'Resolving ISIN Regex Pattern Failures',steps:['Open the failed record and note the current ISIN value.','Valid ISIN: 2-letter country code + 9 alphanumeric chars + 1 check digit = 12 chars total.','Common issues: leading/trailing whitespace, lowercase letters, special characters.','Use the internal ISIN Validator tool to verify the value.','Correct the format if it is a data entry or transformation error.','If structurally invalid, contact the upstream data source team.']}},
+  'CFI Code':{'expect_column_values_to_not_be_null':{title:'Resolving CFI Code Null Failures',steps:['Identify the instrument type (Equity, Bond, Derivative etc) for the failing record.','CFI Code is a 6-character code per ISO 10962 standard.','Cross-reference in the internal Master Data System.','Common codes: ESVUFR (Common Equity), DBFNFR (Government Bond).','If derivable, update the record. Otherwise contact Reference Data team.','Validate and mark the outcome as Resolved.']},'expect_column_values_to_match_regex':{title:'Resolving CFI Code Regex Failures',steps:['CFI Code must be exactly 6 uppercase alphabetic characters. Regex: ^[A-Z]{6}$','Check for lowercase chars, numbers, embedded spaces, or wrong length.','First character must match instrument category: E=Equity, D=Debt, R=Entitlement.','Use the CFI Lookup Tool or ISO 10962 standard reference to derive correct code.','Correct the value, validate with regex, and mark as Resolved.']}},
+  'Effective To/From':{'Effective To should be greater than Effective From':{title:'Resolving Effective Date Range Violations',steps:['Open the record and note both Effective From and Effective To dates.','Effective To must always be strictly later than Effective From.','Common causes: date entry reversal, timezone conversion errors, default date misapplication.','Check upstream system for correct date range for this instrument.','For open-ended instruments, set Effective To to 9999-12-31.','Correct the dates, validate the range, and mark as Resolved.']}}
+};
+
+var CFG = {autoAssign:false,showNotif:true,ingestAuto:false};
+var taskCounter = 8;
+var foCounter = 0;
+var currentPage = 'tasks';
+var currentQueueFilter = null;
+var currentStatusFilter = 'all';
+var chatOpen = false;
+var activePopover = null;
+
+// ── UTILS ──────────────────────────────────────────────────
+function getAnalyst(id){return ANALYSTS.find(function(a){return a.id===id;});}
+function getSLA(t){
+  var ms = t.sla - now();
+  var hrs = ms/3600000;
+  if(hrs<0) return {cls:'sla-breached',label:'BREACHED',txt:Math.abs(Math.round(hrs))+'h overdue',dot:'pulse'};
+  if(hrs<2) return {cls:'sla-risk',label:'AT RISK',txt:Math.round(hrs*60)+'m left',dot:'pulse'};
+  return {cls:'sla-ok',label:'ON TRACK',txt:Math.round(hrs)+'h left',dot:''};
+}
+function fmtTime(d){
+  var diff = now()-d;
+  if(diff<60000) return 'Just now';
+  if(diff<3600000) return Math.round(diff/60000)+'m ago';
+  if(diff<86400000) return Math.round(diff/3600000)+'h ago';
+  return d.toLocaleDateString();
+}
+function pClass(p){return 'b-'+p.toLowerCase();}
+function sClass(s){return 'b-'+s.toLowerCase();}
+function priColor(p){var c={Critical:'#d13438',High:'#ca5010',Medium:'#0078d4',Low:'#107c10'};return c[p]||'#666';}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+
+function notify(title,msg,type){
+  type=type||'info';
+  var icons={success:'&#10003;',error:'&#10007;',info:'&#8505;',warn:'&#9888;'};
+  var el=document.createElement('div');
+  el.className='notif '+type;
+  el.innerHTML='<div class="notif-icon">'+icons[type]+'</div><div class="notif-body"><div class="notif-title">'+title+'</div><div class="notif-msg">'+msg+'</div></div>';
+  document.getElementById('notif-area').appendChild(el);
+  setTimeout(function(){el.style.transition='opacity 0.4s';el.style.opacity='0';setTimeout(function(){el.remove();},400);},4500);
+}
+
+// close popover on outside click
+document.addEventListener('click',function(e){
+  if(activePopover && !activePopover.contains(e.target)){
+    activePopover.querySelector('.ai-popover').classList.remove('show');
+    activePopover=null;
+  }
+});
+
+// ── NAV ──────────────────────────────────────────────────
+function setNav(id){
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var el=document.getElementById(id);
+  if(el) el.classList.add('active');
+}
+function showPage(p){
+  currentPage=p; currentQueueFilter=null; currentStatusFilter='all';
+  setNav('nav-'+p);
+  var titles={tasks:'Task Queue',sla:'SLA Monitor',team:'Team'};
+  var bcs={tasks:'All Queues \u00b7 All Status',sla:'Real-time SLA tracking',team:'Analyst workload & availability'};
+  document.getElementById('page-title').textContent=titles[p];
+  document.getElementById('page-bc').textContent=bcs[p];
+  if(p==='tasks') renderTasks();
+  else if(p==='sla') renderSLA();
+  else if(p==='team') renderTeam();
+}
+function filterQueue(q){
+  currentPage='tasks'; currentQueueFilter=q; currentStatusFilter='all';
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var navId = 'nav-q-'+q.toLowerCase();
+  var el = document.getElementById(navId);
+  if(el) el.classList.add('active');
+  document.getElementById('page-title').textContent=q+' Queue';
+  document.getElementById('page-bc').textContent='Queue \u00b7 All Status';
+  renderTasks();
+}
+
+// ── CONFIG ──────────────────────────────────────────────────
+function openConfigModal(){
+  document.getElementById('cfg-auto').checked=CFG.autoAssign;
+  document.getElementById('cfg-notif').checked=CFG.showNotif;
+  document.getElementById('cfg-ingest-auto').checked=CFG.ingestAuto;
+  openModal('config-overlay');
+}
+function updateConfig(){
+  CFG.autoAssign=document.getElementById('cfg-auto').checked;
+  CFG.showNotif=document.getElementById('cfg-notif').checked;
+  CFG.ingestAuto=document.getElementById('cfg-ingest-auto').checked;
+}
+
+// ── AI ASSIGN INFO ──────────────────────────────────────────
+function buildPopoverHTML(aiScore,method){
+  if(!aiScore) return '';
+  var a=getAnalyst(aiScore.aid);
+  if(!a) return '';
+  var methodLabel = method==='AI_AUTO'?'AI Auto-Assigned':method==='AI_SUGGESTED'?'AI Suggested':'Manual';
+  var scoreKeys=Object.keys(aiScore.scores);
+  var barsHTML=scoreKeys.map(function(k){
+    var v=aiScore.scores[k];
+    var valCls=v>=80?'score-high':v>=50?'score-mid':v>0?'score-low':'score-zero';
+    var valColor=v>=80?'#107c10':v>=50?'#0078d4':v>0?'#ca5010':'#a0a0a0';
+    return '<div class="pop-score-row"><div class="pop-score-row-hdr"><span class="pop-score-label">'+k+'</span><span class="pop-score-val" style="color:'+valColor+'">'+v+'%</span></div><div class="pop-bar-bg"><div class="pop-bar-fill '+valCls+'" style="width:'+v+'%"></div></div></div>';
+  }).join('');
+  var strengthsHTML=aiScore.strengths.map(function(s){return '<span class="pop-tag">'+s+'</span>';}).join('');
+  var risksHTML=aiScore.risks.map(function(r){return '<span class="pop-tag risk">'+r+'</span>';}).join('');
+  return '<div class="pop-header"><span class="pop-title">AI Assignment Insight</span><span class="pop-score">'+aiScore.score+'%</span></div><div class="pop-scores">'+barsHTML+'</div><div class="pop-reasoning">'+aiScore.reasoning+'</div><div class="pop-tags">'+strengthsHTML+risksHTML+'</div><div class="pop-method"><span>Method: '+methodLabel+'</span> &bull; <span>Est. resolution: ~'+aiScore.eta+' min</span></div>';
+}
+
+function toggleAIPopover(e,taskId){
+  e.stopPropagation();
+  var wrap=e.currentTarget.closest('.assignee-wrap');
+  var pop=wrap.querySelector('.ai-popover');
+  if(!pop) return;
+  var isShown=pop.classList.contains('show');
+  if(activePopover && activePopover!==wrap){
+    activePopover.querySelector('.ai-popover').classList.remove('show');
+  }
+  if(isShown){pop.classList.remove('show');activePopover=null;}
+  else{pop.classList.add('show');activePopover=wrap;}
+}
+
+// ── RENDER TASKS ──────────────────────────────────────────
+function renderTasks(){
+  var filtered=TASKS.filter(function(t){
+    if(currentQueueFilter && t.queue!==currentQueueFilter) return false;
+    if(currentStatusFilter==='unassigned') return !t.assignee;
+    if(currentStatusFilter!=='all' && t.status!==currentStatusFilter) return false;
+    return true;
+  });
+
+  var total=TASKS.length;
+  var active=TASKS.filter(function(t){return t.status==='Active';}).length;
+  var breached=TASKS.filter(function(t){return getSLA(t).cls==='sla-breached'&&t.status!=='Resolved'&&t.status!=='Closed';}).length;
+  var atRisk=TASKS.filter(function(t){return getSLA(t).cls==='sla-risk'&&t.status!=='Resolved'&&t.status!=='Closed';}).length;
+  var resolved=TASKS.filter(function(t){return t.status==='Resolved';}).length;
+
+  var html = '<div class="stats-row">'
+    +'<div class="stat-card c-total"><div class="stat-label">Total Tasks</div><div class="stat-value">'+total+'</div><div class="stat-sub">All queues</div></div>'
+    +'<div class="stat-card c-active"><div class="stat-label">Active</div><div class="stat-value">'+active+'</div><div class="stat-sub">In progress</div></div>'
+    +'<div class="stat-card c-breach"><div class="stat-label">SLA Breached</div><div class="stat-value">'+breached+'</div><div class="stat-sub">Immediate action</div></div>'
+    +'<div class="stat-card c-risk"><div class="stat-label">SLA At Risk</div><div class="stat-value">'+atRisk+'</div><div class="stat-sub">Within 2 hours</div></div>'
+    +'<div class="stat-card c-resolved"><div class="stat-label">Resolved Today</div><div class="stat-value">'+resolved+'</div><div class="stat-sub">Completed</div></div>'
+    +'</div>';
+
+  // Config banner
+  html += '<div class="config-bar">'
+    +'<span class="config-bar-label">&#9889; AI Auto-Assign on Creation:</span>'
+    +'<label class="toggle"><input type="checkbox"'+(CFG.autoAssign?' checked':'')+'onchange="CFG.autoAssign=this.checked;notify(\'AI Settings Updated\',this.checked?\'Tasks will now be auto-assigned on creation.\':\'Auto-assign disabled.\',\'info\');"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>'
+    +'<span class="config-bar-label" style="margin-left:16px;">Show Notifications:</span>'
+    +'<label class="toggle"><input type="checkbox"'+(CFG.showNotif?' checked':'')+'onchange="CFG.showNotif=this.checked;"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>'
+    +'<span class="config-info">More settings: <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="openConfigModal()">AI Settings &#8250;</span></span>'
+    +'</div>';
+
+  // Command bar
+  html += '<div class="command-bar">'
+    +'<button class="btn btn-default btn-sm" onclick="setStatusFilter(\'all\',this)">All</button>'
+    +'<button class="btn btn-default btn-sm" onclick="setStatusFilter(\'New\',this)">New</button>'
+    +'<button class="btn btn-default btn-sm" onclick="setStatusFilter(\'Active\',this)">Active</button>'
+    +'<button class="btn btn-default btn-sm" onclick="setStatusFilter(\'Blocked\',this)">Blocked</button>'
+    +'<button class="btn btn-default btn-sm" onclick="setStatusFilter(\'Resolved\',this)">Resolved</button>'
+    +'<button class="btn btn-default btn-sm" onclick="setStatusFilter(\'unassigned\',this)">Unassigned</button>'
+    +'<div class="cmd-divider"></div>'
+    +'<div class="search-wrap"><span class="search-icon">&#128269;</span><input class="search-box" placeholder="Search tasks..." oninput="liveSearch(this.value)"/></div>'
+    +'</div>';
+
+  // Table
+  html += '<div class="table-card"><table><thead><tr>'
+    +'<th>Task Ref</th><th>Description</th><th>Queue</th><th>Priority</th>'
+    +'<th>Status</th><th>Domain</th><th>Assignee</th><th>SLA Status</th>'
+    +'<th>Open / Total</th><th>Actions</th>'
+    +'</tr></thead><tbody id="task-tbody">';
+
+  if(filtered.length===0){
+    html += '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">&#9711;</div><div class="empty-text">No tasks match the current filter</div></div></td></tr>';
+  } else {
+    filtered.forEach(function(t){html+=renderTaskRow(t);});
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('main-content').innerHTML=html;
+}
+
+function renderTaskRow(t){
+  var sla=getSLA(t);
+  var analyst=t.assignee?getAnalyst(t.assignee):null;
+  var hasAI = t.aiScore || (t.assignee && t.assignedBy && t.assignedBy!=='MANUAL');
+  var aiInfo = t.aiScore ? t.aiScore : (AI_SCORES[t.id] ? AI_SCORES[t.id][0] : null);
+
+  var assigneeHTML;
+  if(analyst){
+    var popHTML = (aiInfo && (t.assignedBy==='AI_AUTO'||t.assignedBy==='AI_SUGGESTED')) ? '<div class="ai-popover">'+buildPopoverHTML(aiInfo,t.assignedBy)+'</div>' : '';
+    var aiBtnHTML = (aiInfo && (t.assignedBy==='AI_AUTO'||t.assignedBy==='AI_SUGGESTED')) ? '<span class="ai-badge-btn" onclick="toggleAIPopover(event,\''+t.id+'\')">&#9889; '+Math.round(aiInfo.score)+'%</span>' : '';
+    assigneeHTML='<div class="assignee-wrap"><div class="av-chip '+analyst.cls+'">'+analyst.initials+'</div><span style="font-size:13px;">'+analyst.name.split(' ')[0]+'</span>'+aiBtnHTML+popHTML+'</div>';
+  } else {
+    assigneeHTML='<span class="unassigned-tag">Unassigned</span>';
+  }
+
+  var actionsHTML;
+  if(!t.assignee){
+    actionsHTML='<button class="btn btn-ai btn-xs" onclick="event.stopPropagation();openAISuggest(\''+t.id+'\')">&#9889; AI Assign</button>';
+  } else {
+    actionsHTML='<button class="btn btn-default btn-xs" onclick="event.stopPropagation();openAISuggest(\''+t.id+'\')">Reassign</button>';
+  }
+
+  return '<tr onclick="openTask(\''+t.id+'\')">'
+    +'<td><span class="task-ref-link mono">'+t.ref+'</span></td>'
+    +'<td><div class="task-desc-main">'+t.desc+'</div><div class="task-desc-sub">'+t.queue+' &bull; '+fmtTime(t.created)+'</div></td>'
+    +'<td><span style="font-size:12px;color:var(--text2)">'+t.queue+'</span></td>'
+    +'<td><span class="badge '+pClass(t.priority)+'">'+t.priority+'</span></td>'
+    +'<td><span class="badge '+sClass(t.status)+'">'+t.status+'</span></td>'
+    +'<td><span style="font-size:12px;color:var(--text2)">'+t.domain+'</span></td>'
+    +'<td>'+assigneeHTML+'</td>'
+    +'<td><div class="sla-pill '+sla.cls+'"><div class="sla-dot '+sla.dot+'"></div>'+sla.txt+'</div></td>'
+    +'<td><span class="mono" style="font-size:12px;color:'+(t.open>0?'var(--amber)':'var(--green)')+'">'+t.open+' / '+t.outcomes+'</span></td>'
+    +'<td onclick="event.stopPropagation()">'+actionsHTML+'</td>'
+    +'</tr>';
+}
+
+function setStatusFilter(val,btn){
+  currentStatusFilter=val;
+  document.querySelectorAll('.command-bar .btn').forEach(function(b){b.classList.remove('btn-primary');b.classList.add('btn-default');});
+  btn.classList.remove('btn-default');btn.classList.add('btn-primary');
+  renderTasks();
+}
+function liveSearch(q){
+  var rows=document.querySelectorAll('#task-tbody tr');
+  rows.forEach(function(r){r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';});
+}
+
+// ── TASK DETAIL MODAL ──────────────────────────────────────
+function openTask(id){
+  var t=TASKS.find(function(x){return x.id===id;});
+  if(!t) return;
+  var sla=getSLA(t);
+  var analyst=t.assignee?getAnalyst(t.assignee):null;
+  var kb=KB[t.field]?KB[t.field][t.rule]:null;
+  var aiInfo=t.aiScore||(AI_SCORES[t.id]?AI_SCORES[t.id][0]:null);
+
+  var outcomes=[];
+  for(var i=0;i<t.outcomes;i++){outcomes.push({ref:String(199944+i+1),recId:i+1,status:i<t.open?'In Task':'Resolved'});}
+
+  var assignMethodLabel=t.assignedBy==='AI_AUTO'?'AI Auto-Assigned':t.assignedBy==='AI_SUGGESTED'?'AI Suggested':'Manual';
+
+  var html='<div class="modal-header">'
+    +'<div><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span class="task-ref-link mono" style="font-size:13px;">'+t.ref+'</span><span class="badge '+pClass(t.priority)+'">'+t.priority+'</span><span class="badge '+sClass(t.status)+'">'+t.status+'</span><div class="sla-pill '+sla.cls+'"><div class="sla-dot '+sla.dot+'"></div>'+sla.label+' &bull; '+sla.txt+'</div></div>'
+    +'<div class="modal-title">'+t.desc+'</div></div>'
+    +'<div class="modal-close" onclick="closeModal(\'task-overlay\')">&#10005;</div></div>'
+    +'<div class="modal-body">'
+    +'<div class="meta-grid">'
+    +'<div class="meta-item"><div class="meta-key">Queue</div><div class="meta-val">'+t.queue+'</div></div>'
+    +'<div class="meta-item"><div class="meta-key">Domain</div><div class="meta-val">'+t.domain+'</div></div>'
+    +'<div class="meta-item"><div class="meta-key">Created</div><div class="meta-val">'+fmtTime(t.created)+'</div></div>'
+    +'<div class="meta-item"><div class="meta-key">Due Date</div><div class="meta-val">'+t.due.toLocaleString([],{dateStyle:'short',timeStyle:'short'})+'</div></div>'
+    +'<div class="meta-item"><div class="meta-key">Assignee</div><div class="meta-val">'+(analyst?analyst.name:'Unassigned')+'</div></div>'
+    +'<div class="meta-item"><div class="meta-key">Assigned By</div><div class="meta-val" style="color:'+(t.assignedBy==='AI_AUTO'||t.assignedBy==='AI_SUGGESTED'?'var(--teal)':'var(--text)')+'">'+(t.assignedBy?assignMethodLabel:'&mdash;')+'</div></div>'
+    +'<div class="meta-item"><div class="meta-key">Validated Field</div><div class="meta-val">'+t.field+'</div></div>'
+    +'<div class="meta-item"><div class="meta-key">Open Outcomes</div><div class="meta-val" style="color:var(--amber)">'+t.open+' / '+t.outcomes+'</div></div>'
+    +'</div>';
+
+  // AI assignment insight panel - shown when task was AI-assigned
+  if(aiInfo && (t.assignedBy==='AI_AUTO'||t.assignedBy==='AI_SUGGESTED')){
+    var a2=getAnalyst(aiInfo.aid)||analyst;
+    var scoreKeys=Object.keys(aiInfo.scores);
+    var barsHTML=scoreKeys.map(function(k){
+      var v=aiInfo.scores[k];
+      var valCls=v>=80?'score-high':v>=50?'score-mid':v>0?'score-low':'score-zero';
+      var valColor=v>=80?'#107c10':v>=50?'#0078d4':v>0?'#ca5010':'#a0a0a0';
+      return '<div class="pop-score-row"><div class="pop-score-row-hdr"><span class="pop-score-label">'+k+'</span><span class="pop-score-val" style="color:'+valColor+'">'+v+'%</span></div><div class="pop-bar-bg"><div class="pop-bar-fill '+valCls+'" style="width:'+v+'%"></div></div></div>';
+    }).join('');
+    var etaMin = getHistETA(t.assignee, t.field);
+    html += '<div class="ai-panel"><div class="ai-panel-hdr"><div class="ai-panel-icon">&#9889;</div><div><div class="ai-panel-title">AI Assignment Insight &mdash; '+assignMethodLabel+'</div><div class="ai-panel-sub">Confidence: '+aiInfo.score+'% &bull; Analyst: '+(analyst?analyst.name:'')+'</div></div></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">'
+      +'<div><div class="pop-scores">'+barsHTML+'</div></div>'
+      +'<div>'
+      +'<div class="pop-reasoning" style="margin-bottom:10px;">'+aiInfo.reasoning+'</div>'
+      +'<div style="background:var(--teal-light);border:1px solid #b0dfe0;border-radius:var(--radius);padding:10px 12px;">'
+      +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--teal);margin-bottom:4px;">&#9200; Estimated Resolution Time</div>'
+      +'<div style="font-size:22px;font-weight:700;font-family:var(--font-mono);color:var(--teal);">'+etaMin+' min</div>'
+      +'<div style="font-size:11px;color:var(--text4);margin-top:2px;">Based on '+(analyst?analyst.name.split(" ")[0]:"analyst")+"'s historical "+t.field+' resolutions</div>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">'
+      +aiInfo.strengths.map(function(s){return '<span class="sug-tag strength">&#10003; '+s+'</span>';}).join('')
+      +aiInfo.risks.map(function(r){return '<span class="sug-tag risk">&#9888; '+r+'</span>';}).join('')
+      +'</div></div>';
+  } else if(!t.assignee){
+    html += '<div class="ai-panel"><div class="ai-panel-hdr"><div class="ai-panel-icon">&#9889;</div><div><div class="ai-panel-title">AI Assignment</div><div class="ai-panel-sub">This task is unassigned. Get AI recommendations or assign manually.</div></div><div style="margin-left:auto;display:flex;gap:8px;"><button class="btn btn-ai btn-sm" onclick="openAISuggest(\''+t.id+'\')">&#9889; Get AI Suggestions</button><button class="btn btn-default btn-sm" onclick="openManualAssign(\''+t.id+'\')">Assign Manually</button></div></div></div>';
+  }
+
+  // Tabs
+  html += '<div class="modal-tabs"><div class="modal-tab active" onclick="switchTab(this,\'tab-outcomes\')">Failed Outcomes ('+t.open+' open)</div><div class="modal-tab" onclick="switchTab(this,\'tab-guide\')">Resolution Guide</div></div>';
+
+  // Outcomes tab
+  html += '<div id="tab-outcomes"><div class="table-card" style="margin-bottom:16px;"><table class="outcomes-tbl"><thead><tr><th>Ref</th><th>Record ID</th><th>Validated Field</th><th>Rule</th><th>Severity</th><th>Stage</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  outcomes.forEach(function(o){
+    var sev=t.field==='Effective To/From'?'Warning':'Stop Field';
+    var sevCls=sev==='Warning'?'b-medium':'b-critical';
+    html += '<tr><td class="mono" style="color:var(--text3);font-size:11px;">'+o.ref+'</td>'
+      +'<td class="mono" style="font-size:12px;">'+o.recId+'</td>'
+      +'<td><strong>'+t.field+'</strong></td>'
+      +'<td><span style="font-family:var(--font-mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:1px 6px;border-radius:3px;">'+t.rule+'</span></td>'
+      +'<td><span class="badge '+sevCls+'">'+sev+'</span></td>'
+      +'<td style="font-size:11px;color:var(--text3);">Normalized</td>'
+      +'<td><span class="badge '+(o.status==='Resolved'?'b-resolved':'b-active')+'">'+o.status+'</span></td>'
+      +'<td>'+(o.status!=='Resolved'?'<button class="btn btn-default btn-xs" onclick="resolveOutcome(\''+t.id+'\',\''+o.ref+'\')">Resolve</button>':'<span style="color:var(--green);font-size:12px;">&#10003; Done</span>')+'</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  if(t.status!=='Resolved'&&t.status!=='Closed'){
+    html += '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+      +'<button class="btn btn-danger btn-sm" onclick="setTaskStatus(\''+t.id+'\',\'Blocked\')">Mark Blocked</button>'
+      +'<button class="btn btn-primary" onclick="resolveTask(\''+t.id+'\')">&#10003; Mark All Resolved</button>'
+      +'</div>';
+  }
+  html += '</div>';
+
+  // Guide tab
+  html += '<div id="tab-guide" style="display:none;">';
+  if(kb){
+    html += '<div class="res-guide"><div class="res-guide-title">'+kb.title+'</div><ol class="res-steps">'+kb.steps.map(function(s){return '<li>'+s+'</li>';}).join('')+'</ol></div>';
+  } else {
+    html += '<div class="empty-state"><div class="empty-icon">&#128196;</div><div class="empty-text">No resolution guide available for this rule.</div></div>';
+  }
+  html += '</div></div>';
+
+  // Manual assign section
+  var qElig=getQueueAnalysts(t.queue);
+  html += '<div id="manual-assign-sec" style="display:none;margin-top:12px;"><div class="divider"></div><div class="sec-title">Manual Assignment <span>('+t.queue+' queue members only)</span></div><div style="display:flex;align-items:center;gap:10px;"><select class="form-input" id="manual-analyst-sel" style="width:200px;">'
+    +qElig.map(function(a){return '<option value="'+a.id+'">'+a.name+'</option>';}).join('')
+    +'</select><button class="btn btn-primary btn-sm" onclick="assignManual(\''+t.id+'\')">Assign</button><button class="btn btn-default btn-sm" onclick="document.getElementById(\'manual-assign-sec\').style.display=\'none\'">Cancel</button></div></div>';
+
+  html += '</div>'; // modal-body close - footer handled separately
+
+  document.getElementById('task-modal-body').innerHTML=html;
+  openModal('task-overlay');
+}
+
+function switchTab(el,tabId){
+  document.querySelectorAll('#task-modal-body .modal-tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  var tabs=['tab-outcomes','tab-guide'];
+  tabs.forEach(function(tid){
+    var el2=document.getElementById(tid);
+    if(el2) el2.style.display=tid===tabId?'block':'none';
+  });
+}
+function openManualAssign(id){
+  var sec=document.getElementById('manual-assign-sec');
+  if(sec) sec.style.display='flex';
+}
+function assignManual(taskId){
+  var selId=document.getElementById('manual-analyst-sel').value;
+  doAssign(taskId,selId,'MANUAL',null);
+  closeModal('task-overlay');
+  renderTasks();
+}
+function resolveOutcome(taskId,ref){
+  var t=TASKS.find(function(x){return x.id===taskId;});
+  if(t&&t.open>0){t.open--;notify('Outcome Resolved','Outcome '+ref+' marked as resolved.','success');openTask(taskId);renderTasks();}
+}
+function resolveTask(taskId){
+  var t=TASKS.find(function(x){return x.id===taskId;});
+  if(t){t.status='Resolved';t.open=0;notify('Task Resolved',t.ref+' has been fully resolved.','success');closeModal('task-overlay');renderTasks();}
+}
+function setTaskStatus(taskId,status){
+  var t=TASKS.find(function(x){return x.id===taskId;});
+  if(t){t.status=status;notify('Status Updated',t.ref+' marked as '+status+'.','info');openTask(taskId);renderTasks();}
+}
+
+// ── AI SUGGEST MODAL ──────────────────────────────────────
+// Store pending task/sugs so onclick buttons never need JSON.stringify
+var _aiTaskId = null;
+var _aiSugs = [];
+
+function getQueueAnalysts(queue){
+  return ANALYSTS.filter(function(a){return a.queues.indexOf(queue)>-1;});
+}
+function getHistETA(analystId, field){
+  var hist={
+    a1:{ISIN:42,'CFI Code':58,'Effective To/From':38},
+    a2:{ISIN:50,'CFI Code':82,'Effective To/From':45},
+    a3:{ISIN:65,'CFI Code':34,'Effective To/From':60},
+    a4:{ISIN:68,'CFI Code':90,'Effective To/From':55},
+    a5:{ISIN:46,'CFI Code':62,'Effective To/From':40},
+    a6:{ISIN:55,'CFI Code':70,'Effective To/From':48},
+    a7:{ISIN:60,'CFI Code':75,'Effective To/From':52},
+    a8:{ISIN:58,'CFI Code':36,'Effective To/From':65}
+  };
+  return hist[analystId]?(hist[analystId][field]||60):60;
+}
+function pickSug(idx){
+  if(!_aiTaskId) return;
+  var s=_aiSugs[idx];
+  if(!s) return;
+  doAssign(_aiTaskId, s.aid, idx===0?'AI_AUTO':'AI_SUGGESTED', s);
+}
+function pickManual(){
+  var sel=document.getElementById('ai-manual-sel');
+  if(sel&&_aiTaskId) doAssign(_aiTaskId, sel.value, 'MANUAL', null);
+}
+
+function openAISuggest(taskId){
+  var t=TASKS.find(function(x){return x.id===taskId;});
+  if(!t) return;
+  _aiTaskId=taskId;
+  var sla=getSLA(t);
+  var sugs=AI_SCORES[taskId]||AI_SCORES['t2'];
+  _aiSugs=sugs;
+  var queueAnalysts=getQueueAnalysts(t.queue);
+
+  var html='<div class="modal-header"><div><div class="modal-title">&#9889; AI Assignment Suggestions</div>'
+    +'<div class="modal-subtitle">'+t.ref+' &bull; '+t.queue+' &bull; '+t.priority+' Priority &bull; SLA: '+sla.txt+'</div></div>'
+    +'<div class="modal-close" onclick="closeModal(\'ai-overlay\')">&#10005;</div></div>'
+    +'<div class="modal-body">'
+    +'<div style="background:var(--blue-light);border:1px solid #b3d6f5;border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--blue-dark);">'
+    +'&#9889; GPT-4o analysed <strong>'+queueAnalysts.length+' queue-eligible analysts</strong> ('+t.queue+' queue only). Scores based on availability, workload, past performance, SLA urgency &amp; experience.'
+    +'</div>'
+    +'<div class="suggestions-grid">';
+
+  sugs.forEach(function(s,i){
+    var a=getAnalyst(s.aid);
+    if(!a) return;
+    var rankCls=i===0?'':'r'+(i+1);
+    var eta=getHistETA(s.aid,t.field);
+    var scoreKeys=Object.keys(s.scores);
+    var barsHTML=scoreKeys.map(function(k){
+      var v=s.scores[k];
+      var bColor=v>=80?'#107c10':v>=50?'#0078d4':v>0?'#ca5010':'#d9d9d9';
+      var vColor=v>=80?'#107c10':v>=50?'#0078d4':v>0?'#ca5010':'#a0a0a0';
+      return '<div class="sug-bar-row"><div class="sug-bar-row-hdr"><span class="sug-bar-label">'+k+'</span><span class="sug-bar-val-lbl" style="color:'+vColor+'">'+v+'%</span></div><div class="sug-bar-bg"><div class="sug-bar-fill" style="width:'+v+'%;background:'+bColor+'"></div></div></div>';
+    }).join('');
+    html += '<div class="sug-card'+(i===0?' top-pick':'')+'"><div class="sug-rank '+rankCls+'">#'+(i+1)+' Pick</div>'
+      +'<div class="sug-analyst-row"><div class="av-chip '+a.cls+'">'+a.initials+'</div><div><div class="sug-name">'+a.name+'</div><div class="sug-exp">'+a.exp+' yrs &bull; '+a.queues.join(', ')+'</div></div><div class="sug-score-big '+rankCls+'">'+s.score+'%</div></div>'
+      +'<div class="sug-bars">'+barsHTML+'</div>'
+      +'<div class="sug-reasoning">'+s.reasoning+'</div>'
+      +'<div class="sug-tags">'+s.strengths.map(function(st){return '<span class="sug-tag strength">'+st+'</span>';}).join('')+s.risks.map(function(r){return '<span class="sug-tag risk">'+r+'</span>';}).join('')+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin:6px 0 8px;font-family:var(--font-mono);">&#9200; Est. resolution: <strong>'+eta+' min</strong></div>'
+      +'<button class="btn '+(i===0?'btn-ai':'btn-default')+' sug-select" onclick="pickSug('+i+')">'+( i===0?'&#9889; Assign (AI Recommended)':'Assign '+a.name.split(' ')[0])+'</button>'
+      +'</div>';
+  });
+
+  html += '</div><div class="divider"></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;">'
+    +'<span style="font-size:12px;color:var(--text3);">Or assign manually ('+t.queue+' queue only):</span>'
+    +'<select class="form-input" id="ai-manual-sel" style="width:180px;">'
+    +queueAnalysts.map(function(a){return '<option value="'+a.id+'">'+a.name+'</option>';}).join('')
+    +'</select>'
+    +'<button class="btn btn-default btn-sm" onclick="pickManual()">Assign Selected</button>'
+    +'</div></div>';
+
+  document.getElementById('ai-modal-body').innerHTML=html;
+  openModal('ai-overlay');
+}
+
+function doAssign(taskId,analystId,method,scoreObj){
+  var t=TASKS.find(function(x){return x.id===taskId;});
+  var a=getAnalyst(analystId);
+  if(!t||!a) return;
+  t.assignee=analystId;
+  t.status='Active';
+  t.assignedBy=method;
+  if(scoreObj) t.aiScore=scoreObj;
+  var aObj=ANALYSTS.find(function(x){return x.id===analystId;});
+  if(aObj) aObj.active=Math.min(aObj.active+1,aObj.max);
+  closeModal('ai-overlay');
+  closeModal('task-overlay');
+  if(CFG.showNotif||method==='AI_AUTO'){
+    notify('Task Assigned',t.ref+' assigned to '+a.name+(method!=='MANUAL'?' via '+method.replace('_',' '):'')+'.',method==='AI_AUTO'?'success':'info');
+  }
+  renderTasks();
+}
+
+function bulkAutoAssign(){
+  var unassigned=TASKS.filter(function(t){return !t.assignee&&t.status==='New';});
+  if(!unassigned.length){notify('No Unassigned Tasks','All tasks already have an assignee.','info');return;}
+  var count=0;
+  unassigned.forEach(function(t){
+    var sugs=AI_SCORES[t.id];
+    if(sugs){
+      var top=sugs[0];
+      var a=getAnalyst(top.aid);
+      if(a&&a.active<a.max){t.assignee=top.aid;t.status='Active';t.assignedBy='AI_AUTO';t.aiScore=top;a.active++;count++;}
+    }
+  });
+  notify('AI Auto-Assignment Complete','Successfully assigned '+count+' task'+(count!==1?'s':'')+' using AI recommendations.','success');
+  renderTasks();
+}
+
+// ── CREATE TASK ──────────────────────────────────────────
+function openCreateTaskModal(){openModal('create-overlay');}
+function createTask(aiAssign){
+  var desc=document.getElementById('ct-desc').value||'New validation failure batch';
+  var queue=document.getElementById('ct-queue').value;
+  var priority=document.getElementById('ct-priority').value;
+  var domain=document.getElementById('ct-domain').value;
+  var slaMap={Critical:4,High:8,Medium:24,Low:48};
+  var t={id:'t'+taskCounter,ref:'TSK-00'+taskCounter,desc:desc,priority:priority,queue:queue,status:'New',assignee:null,due:h(slaMap[priority]*2),sla:h(slaMap[priority]),domain:domain,created:new Date(),assignedBy:null,outcomes:Math.floor(Math.random()*4)+1,open:Math.floor(Math.random()*4)+1,field:'ISIN',rule:'expect_column_values_to_not_be_null',aiScore:null};
+  t.open=Math.min(t.open,t.outcomes);
+  taskCounter++;
+  TASKS.unshift(t);
+  closeModal('create-overlay');
+  notify('Task Created',t.ref+' added to '+queue+' queue.','success');
+  if(aiAssign||CFG.autoAssign){
+    var sugs=AI_SCORES[t.id]||(AI_SCORES['t6']);
+    if(sugs){var top=sugs[0];setTimeout(function(){doAssign(t.id,top.aid,'AI_AUTO',top);},600);}
+  }
+  renderTasks();
+}
+
+// ── INGEST FAILED OUTCOMES ──────────────────────────────
+var foRows=[];
+function openIngestModal(){
+  foRows=[{id:++foCounter,field:'ISIN',rule:'expect_column_values_to_not_be_null',severity:'Stop Field'}];
+  renderFOList();
+  openModal('ingest-overlay');
+}
+function addFORow(){
+  foRows.push({id:++foCounter,field:'ISIN',rule:'expect_column_values_to_not_be_null',severity:'Stop Field'});
+  renderFOList();
+}
+function removeFORow(id){
+  foRows=foRows.filter(function(r){return r.id!==id;});
+  renderFOList();
+}
+function renderFOList(){
+  var html=foRows.map(function(r,idx){
+    return '<div class="fo-item">'
+      +'<span class="fo-item-idx">'+(idx+1)+'</span>'
+      +'<select class="form-input" id="fo-field-'+r.id+'" style="font-size:12px;">'
+      +'<option'+(r.field==='ISIN'?' selected':'')+'  value="ISIN">ISIN</option>'
+      +'<option'+(r.field==='CFI Code'?' selected':'')+' value="CFI Code">CFI Code</option>'
+      +'<option'+(r.field==='Effective To/From'?' selected':'')+' value="Effective To/From">Effective To/From</option>'
+      +'</select>'
+      +'<select class="form-input" id="fo-rule-'+r.id+'" style="font-size:12px;">'
+      +'<option value="expect_column_values_to_not_be_null">Not Null</option>'
+      +'<option value="expect_column_values_to_match_regex">Match Regex</option>'
+      +'<option value="Effective To should be greater than Effective From">Date Range</option>'
+      +'</select>'
+      +'<select class="form-input" id="fo-sev-'+r.id+'" style="font-size:12px;">'
+      +'<option value="Stop Field">Stop Field</option>'
+      +'<option value="Warning">Warning</option>'
+      +'</select>'
+      +'<button class="fo-remove" onclick="removeFORow('+r.id+')">&#10005;</button>'
+      +'</div>';
+  }).join('');
+  document.getElementById('fo-list').innerHTML=html||'<div class="empty-state" style="padding:16px;"><div class="empty-text">No records. Click "+ Add Record" to begin.</div></div>';
+}
+function ingestAndCreate(aiAssign){
+  if(!foRows.length){notify('No Records','Add at least one failed outcome record.','warn');return;}
+  var queue=document.getElementById('ing-queue').value;
+  var priority=document.getElementById('ing-priority').value;
+  var domain=document.getElementById('ing-domain').value;
+  var desc=document.getElementById('ing-desc').value||(foRows.length+' failed outcomes ingested - '+queue+' validation batch');
+  var slaMap={Critical:4,High:8,Medium:24,Low:48};
+  var t={id:'t'+taskCounter,ref:'TSK-00'+taskCounter,desc:desc,priority:priority,queue:queue,status:'New',assignee:null,due:h(slaMap[priority]*2),sla:h(slaMap[priority]),domain:domain,created:new Date(),assignedBy:null,outcomes:foRows.length,open:foRows.length,field:foRows[0].field,rule:foRows[0].rule,aiScore:null};
+  taskCounter++;
+  TASKS.unshift(t);
+  closeModal('ingest-overlay');
+  notify('Outcomes Ingested',t.ref+' created with '+foRows.length+' failed outcome'+(foRows.length!==1?'s':'')+'.','success');
+  if(aiAssign||CFG.autoAssign||CFG.ingestAuto){
+    var sugs=AI_SCORES['t6'];
+    if(sugs){var top=sugs[0];setTimeout(function(){doAssign(t.id,top.aid,'AI_AUTO',top);},700);}
+  }
+  renderTasks();
+}
+
+// ── SLA PAGE ──────────────────────────────────────────────
+function renderSLA(){
+  var notDone=TASKS.filter(function(t){return t.status!=='Resolved'&&t.status!=='Closed';});
+  var breached=notDone.filter(function(t){return getSLA(t).cls==='sla-breached';});
+  var atRisk=notDone.filter(function(t){return getSLA(t).cls==='sla-risk';});
+  var onTrack=notDone.filter(function(t){return getSLA(t).cls==='sla-ok';}).sort(function(a,b){return a.sla-b.sla;}).slice(0,6);
+
+  var html='<div class="stats-row" style="grid-template-columns:repeat(3,1fr);max-width:600px;margin-bottom:20px;">'
+    +'<div class="stat-card c-breach"><div class="stat-label">SLA Breached</div><div class="stat-value">'+breached.length+'</div><div class="stat-sub">Immediate action required</div></div>'
+    +'<div class="stat-card c-risk"><div class="stat-label">At Risk (&lt;2h)</div><div class="stat-value">'+atRisk.length+'</div><div class="stat-sub">Monitor closely</div></div>'
+    +'<div class="stat-card c-resolved"><div class="stat-label">On Track</div><div class="stat-value">'+onTrack.length+'</div><div class="stat-sub">Within SLA window</div></div>'
+    +'</div>';
+
+  function slaGroup(title,tasks,cls){
+    if(!tasks.length) return '';
+    var rows=tasks.map(function(t){
+      var s=getSLA(t);
+      var a=t.assignee?getAnalyst(t.assignee):null;
+      return '<div class="sla-row" onclick="openTask(\''+t.id+'\')">'
+        +'<div class="sla-priority-bar" style="background:'+priColor(t.priority)+'"></div>'
+        +'<div class="sla-row-info"><div class="sla-row-ref">'+t.ref+'</div><div class="sla-row-desc">'+t.desc+'</div></div>'
+        +'<span class="badge '+pClass(t.priority)+'">'+t.priority+'</span>'
+        +'<span style="font-size:12px;color:var(--text3);">'+t.queue+'</span>'
+        +(a?'<div class="assignee-wrap"><div class="av-chip '+a.cls+'" style="width:22px;height:22px;font-size:9px;">'+a.initials+'</div><span style="font-size:12px;">'+a.name.split(' ')[0]+'</span></div>':'<span style="font-size:11px;color:var(--red);font-weight:600;">Unassigned</span>')
+        +'<div class="sla-countdown '+cls+'">'+s.txt+'</div>'
+        +(!t.assignee?'<button class="btn btn-ai btn-xs" onclick="event.stopPropagation();openAISuggest(\''+t.id+'\')">&#9889; Assign</button>':'')
+        +'</div>';
+    }).join('');
+    return '<div class="sla-group"><div class="sla-group-hdr"><div class="sla-group-title">'+title+'</div><span class="badge '+(cls==='sla-breached'?'b-critical':cls==='sla-risk'?'b-high':'b-resolved')+'">'+tasks.length+' task'+(tasks.length!==1?'s':'')+'</span></div>'+rows+'</div>';
+  }
+
+  html+=slaGroup('SLA Breached',breached,'sla-breached');
+  html+=slaGroup('At Risk - Within 2 Hours',atRisk,'sla-risk');
+  html+=slaGroup('On Track - Upcoming Deadlines',onTrack,'sla-ok');
+  document.getElementById('main-content').innerHTML=html;
+}
+
+// ── TEAM PAGE ──────────────────────────────────────────────
+function renderTeam(){
+  var html='<div class="analyst-grid">';
+  ANALYSTS.forEach(function(a,idx){
+    var avToday=AVAIL[a.id][0];
+    var note=AVAIL_NOTES[a.id][0];
+    var cap=Math.round(a.active/a.max*100);
+    var capColor=cap>80?'var(--red)':cap>60?'var(--amber)':'var(--green)';
+    var activeTasks=TASKS.filter(function(t){return t.assignee===a.id&&t.status!=='Resolved'&&t.status!=='Closed';});
+
+    html += '<div class="analyst-card"><div class="analyst-hdr"><div class="analyst-av" style="background:'+a.color+'">'+a.initials+'</div><div><div class="analyst-name">'+a.name+'</div><div class="analyst-email">'+a.id.replace('a','john.snow|harry.potter|voldemort|white.walker'.split('|')[idx])+'@lseg.com</div></div><div class="avail-badge '+(avToday?'avail-yes':'avail-no')+'">'+(avToday?'Available':'Unavailable')+'</div></div>'
+      +'<div class="analyst-stats">'
+      +'<div class="a-stat"><div class="a-stat-val" style="color:var(--blue)">'+a.active+'</div><div class="a-stat-lbl">Active Tasks</div></div>'
+      +'<div class="a-stat"><div class="a-stat-val" style="color:'+capColor+'">'+cap+'%</div><div class="a-stat-lbl">Capacity</div></div>'
+      +'<div class="a-stat"><div class="a-stat-val">'+a.exp+'</div><div class="a-stat-lbl">Yrs Exp</div></div>'
+      +'</div>'
+      +'<div class="cap-bar-wrap"><div class="cap-bar-lbl"><span>Workload</span><span>'+a.active+' / '+a.max+' tasks</span></div><div class="cap-bar-bg"><div class="cap-bar-fill" style="width:'+cap+'%;background:'+capColor+';height:100%;border-radius:3px;"></div></div></div>'
+      +'<div class="skill-chips">'+a.queues.map(function(q){return '<span class="skill-chip queue">'+q+'</span>';}).join('')+a.skills.map(function(s){return '<span class="skill-chip">'+s+'</span>';}).join('')+'</div>'
+      +(note?'<div style="padding:6px 10px;background:var(--red-light);border:1px solid #fbd1d2;border-radius:var(--radius);font-size:11px;color:var(--red);margin-bottom:8px;">&#9888; '+note+'</div>':'')
+      +'<div class="avail-strip">'+DAYS.map(function(d,i){return '<div class="avail-day"><div class="avail-day-lbl">'+d.slice(0,3)+'</div><div class="avail-dot '+(AVAIL[a.id][i]?'yes':'no')+'"></div></div>';}).join('')+'</div>'
+      +'</div>';
+  });
+  html += '</div>';
+  document.getElementById('main-content').innerHTML=html;
+}
+
+// ── CHATBOT ──────────────────────────────────────────────
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chat-panel').classList.toggle('open',chatOpen);
+  document.getElementById('chat-unread').style.display=chatOpen?'none':'flex';
+}
+function chatSuggest(txt){document.getElementById('chat-input').value=txt;sendChat();}
+function sendChat(){
+  var input=document.getElementById('chat-input');
+  var msg=input.value.trim();
+  if(!msg) return;
+  input.value='';
+  appendChatMsg(msg,'user');
+  appendTyping();
+  setTimeout(function(){removeTyping();appendChatMsg(genChatReply(msg),'ai');},1000+Math.random()*600);
+}
+function appendChatMsg(txt,role){
+  var c=document.getElementById('chat-msgs');
+  var d=document.createElement('div');
+  d.className='chat-msg'+(role==='user'?' user':'');
+  d.innerHTML='<div class="chat-av '+(role==='ai'?'ai':'usr')+'">'+(role==='ai'?'AI':'JS')+'</div><div class="chat-bubble">'+txt+'</div>';
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function appendTyping(){
+  var c=document.getElementById('chat-msgs');
+  var d=document.createElement('div');d.className='chat-msg';d.id='typing-ind';
+  d.innerHTML='<div class="chat-av ai">AI</div><div class="chat-bubble"><div class="chat-typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>';
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function removeTyping(){var e=document.getElementById('typing-ind');if(e)e.remove();}
+
+function genChatReply(msg){
+  var lo=msg.toLowerCase();
+  if(lo.includes('breach')||lo.includes('sla today')){
+    var b=TASKS.filter(function(t){return getSLA(t).cls==='sla-breached'&&t.status!=='Resolved';});
+    if(!b.length) return 'No tasks are currently breaching SLA. All active tasks are within their deadlines.';
+    return '<strong>'+b.length+' task'+(b.length!==1?'s':'')+' breaching SLA:</strong><br>'+b.map(function(t){var a=t.assignee?getAnalyst(t.assignee):null;return '&bull; <strong>'+t.ref+'</strong> &mdash; '+getSLA(t).txt+' &bull; '+(a?a.name:'Unassigned');}).join('<br>');
+  }
+  if(lo.includes('top 3')||lo.includes('at risk')||lo.includes('likely')){
+    var r=TASKS.filter(function(t){return t.status!=='Resolved'&&t.status!=='Closed';}).map(function(t){return {t:t,hrs:(t.sla-now())/3600000};}).sort(function(a,b){return a.hrs-b.hrs;}).slice(0,3);
+    return '<strong>Top 3 tasks closest to SLA breach:</strong><br>'+r.map(function(item,i){var s=getSLA(item.t);return (i+1)+'. <strong>'+item.t.ref+'</strong> ('+item.t.priority+') &mdash; '+s.txt;}).join('<br>');
+  }
+  if(lo.includes('availab')){
+    var qn=lo.includes('instruments')?'Instruments':lo.includes('quotes')?'Quotes':lo.includes('bonds')?'Bonds':null;
+    var rel=qn?ANALYSTS.filter(function(a){return a.queues.indexOf(qn)>-1;}):ANALYSTS;
+    return '<strong>Team availability today'+(qn?' - '+qn+' Queue':'')+':</strong><br>'+rel.map(function(a){return (AVAIL[a.id][0]?'&#9679; ':'&#9675; ')+'<strong>'+a.name+'</strong> &mdash; '+(AVAIL[a.id][0]?'Available, '+a.active+'/'+a.max+' tasks':(AVAIL_NOTES[a.id][0]||'Unavailable'));}).join('<br>');
+  }
+  if(lo.includes('isin')&&lo.includes('null')){var k=KB['ISIN']['expect_column_values_to_not_be_null'];return '<strong>'+k.title+'</strong><br>'+k.steps.map(function(s,i){return (i+1)+'. '+s;}).join('<br>');}
+  if(lo.includes('cfi')&&lo.includes('null')){var k2=KB['CFI Code']['expect_column_values_to_not_be_null'];return '<strong>'+k2.title+'</strong><br>'+k2.steps.map(function(s,i){return (i+1)+'. '+s;}).join('<br>');}
+  if(lo.includes('effective')||lo.includes('date range')){var k3=KB['Effective To/From']['Effective To should be greater than Effective From'];return '<strong>'+k3.title+'</strong><br>'+k3.steps.map(function(s,i){return (i+1)+'. '+s;}).join('<br>');}
+  if(lo.includes('workload')||lo.includes('how many tasks')){
+    return '<strong>Current team workload:</strong><br>'+ANALYSTS.map(function(a){return '<strong>'+a.name+'</strong>: '+a.active+'/'+a.max+' tasks ('+Math.round(a.active/a.max*100)+'% capacity)';}).join('<br>');
+  }
+  return 'I can help with: <strong>SLA monitoring</strong> ("tasks breaching SLA today"), <strong>team availability</strong> ("who is available in Instruments queue"), <strong>resolution guides</strong> ("how to resolve ISIN null failure"), or <strong>workload</strong> ("how many tasks does Harry Potter have?").';
+}
+
+// ── INIT ──────────────────────────────────────────────────
+renderTasks();
+</script>
+</body>
+</html>
